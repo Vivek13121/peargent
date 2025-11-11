@@ -5,9 +5,12 @@ Pool module for orchestrating multiple agents.
 Manages agent execution, routing, and shared state.
 """
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
 from .state import State
 from .router import RouterFn, RouterResult
+
+if TYPE_CHECKING:
+    from peargent.core.history import ConversationHistory
 
 
 class Pool:
@@ -33,6 +36,7 @@ class Pool:
         router: Optional[RouterFn] = None,
         max_iter: int = 5,
         default_state: Optional[State] = None,
+        history: Optional["ConversationHistory"] = None,
     ):
         # Assign default model to agents that don't have one
         for agent in agents:
@@ -44,7 +48,16 @@ class Pool:
         self.default_model = default_model
         self.router = router or (lambda state, call_count, last: RouterResult(None))
         self.max_iter = max_iter
-        self.state = default_state or State()
+        self.history = history
+
+        # Create state with history manager if provided
+        if default_state:
+            self.state = default_state
+            # Update state's history manager if not already set
+            if history and not self.state.history_manager:
+                self.state.history_manager = history
+        else:
+            self.state = State(history_manager=history)
 
         # If router is a RoutingAgent, provide it with agent objects for better context
         if hasattr(self.router, "agent_objects"):

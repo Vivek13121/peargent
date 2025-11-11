@@ -222,6 +222,7 @@ secrets.json
 .secrets
 
 .claude
+conversation_history
 
 # AI/ML specific
 *.h5

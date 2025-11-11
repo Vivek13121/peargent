@@ -7,7 +7,6 @@ from peargent import (
 )
 from peargent.models import gemini, groq
 
-
 def run_story_pipeline(input: str):
     # Tool: Format final output
     def format_output_tool(story: str, prompt: str) -> str:
@@ -69,7 +68,6 @@ def run_story_pipeline(input: str):
 
     answer = pool.run(input)
     return answer
-
 
 if __name__ == "__main__":
     result = run_story_pipeline("Write a whimsical story about a lonely robot on Mars learning to make friends.")

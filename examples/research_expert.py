@@ -7,7 +7,6 @@ from peargent import (
 )
 from peargent.models import gemini, groq
 
-
 def run_knowledge_pipeline(input: str):
     # Tool: Fetch data (Mocked API tool)
     def fetch_data_tool(query: str) -> str:

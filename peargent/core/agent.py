@@ -12,6 +12,7 @@ from typing import Optional, Dict, List, Any
 
 from jinja2 import Environment, FileSystemLoader
 from peargent.core.stopping import limit_steps
+from peargent.core.history import ConversationHistory
 
 
 class Agent:
@@ -26,14 +27,24 @@ class Agent:
         tools (dict): Dictionary of available tools (name -> Tool object)
         stop_conditions: Conditions that determine when agent should stop iterating
         temporary_memory (list): Conversation history for current run session
+        history (ConversationHistory, optional): Persistent conversation history manager
+        auto_manage_context (bool): Whether to automatically manage context window
+        max_context_messages (int): Maximum messages before auto-management triggers
+        context_strategy (str): Strategy for context management ("smart", "trim_last", "trim_first", "summarize")
+        summarize_model: Model to use for summarization (falls back to main model if not provided)
     """
-    def __init__(self, name, model, persona, description, tools, stop=None):
+    def __init__(self, name, model, persona, description, tools, stop=None, history: Optional[ConversationHistory] = None, auto_manage_context: bool = False, max_context_messages: int = 20, context_strategy: str = "smart", summarize_model=None):
         self.name = name
         self.model = model
         self.persona = persona
         self.description = description
         self.tools = {tool.name: tool for tool in tools}
         self.stop_conditions = stop or limit_steps(5)
+        self.history = history
+        self.auto_manage_context = auto_manage_context
+        self.max_context_messages = max_context_messages
+        self.context_strategy = context_strategy
+        self.summarize_model = summarize_model
 
         self.tool_schemas = [
             {
@@ -58,6 +69,22 @@ class Agent:
         template = self.jinja_env.get_template("tools_prompt.j2")
         return template.render(tools=self.tool_schemas)
 
+    def _render_no_tools_prompt(self) -> str:
+        """Render the no-tools prompt template."""
+        template = self.jinja_env.get_template("no_tools_prompt.j2")
+        return template.render()
+
+    def _render_follow_up_prompt(self, conversation_history: str, has_tools: bool) -> str:
+        """Render the follow-up prompt template after tool execution."""
+        template = self.jinja_env.get_template("follow_up_prompt.j2")
+        tools_prompt = self._render_tools_prompt() if self.tools else ""
+        return template.render(
+            persona=self.persona,
+            tools_prompt=tools_prompt,
+            conversation_history=conversation_history,
+            has_tools=has_tools
+        )
+
     def _build_initial_prompt(self, user_input: str) -> str:
         """
         Build the initial prompt for the LLM.
@@ -69,7 +96,7 @@ class Agent:
         if self.tools:
             tools_prompt = self._render_tools_prompt()
         else:
-            tools_prompt = "IMPORTANT: You do not have access to any tools. Respond directly in natural language only. Do NOT output JSON."
+            tools_prompt = self._render_no_tools_prompt()
 
         memory_str = "\n".join(
             [
@@ -83,12 +110,64 @@ class Agent:
         """Add a message to the agent's temporary memory."""
         self.temporary_memory.append({"role": role, "content": content})
 
+    def _load_history_into_memory(self) -> None:
+        """Load previous messages from persistent history into temporary memory."""
+        if not self.history:
+            return
+
+        # Auto-create a thread if none exists
+        if not self.history.current_thread_id:
+            self.history.create_thread(metadata={"agent": self.name})
+
+        messages = self.history.get_messages()
+        for msg in messages:
+            if msg.role == "tool":
+                # Tool messages are stored as structured data
+                self.temporary_memory.append({
+                    "role": "tool",
+                    "content": msg.tool_call
+                })
+            else:
+                self.temporary_memory.append({
+                    "role": msg.role,
+                    "content": msg.content
+                })
+
+    def _sync_to_history(self) -> None:
+        """Sync new temporary memory messages to persistent history."""
+        if not self.history:
+            return
+
+        # Ensure a thread exists
+        if not self.history.current_thread_id:
+            self.history.create_thread(metadata={"agent": self.name})
+
+        # Get count of messages already in history
+        existing_msg_count = len(self.history.get_messages())
+
+        # Only sync new messages (those added in this run)
+        new_messages = self.temporary_memory[existing_msg_count:]
+
+        for item in new_messages:
+            role = item["role"]
+            content = item["content"]
+
+            if role == "user":
+                self.history.add_user_message(content)
+            elif role == "assistant":
+                self.history.add_assistant_message(content, agent=self.name)
+            elif role == "tool":
+                self.history.add_tool_message(content, agent=self.name)
+
     def run(self, input_data: str) -> str:
         """
         Execute the agent with the given input.
 
         Handles the agent's main loop: generating responses, parsing tool calls,
         executing tools, and managing conversation flow.
+
+        If a history manager is configured, previous conversation context will be
+        loaded and all new messages will be persisted.
 
         Args:
             input_data (str): The user's input or previous agent's output
@@ -98,81 +177,102 @@ class Agent:
         """
         self.temporary_memory = []
 
+        # Ensure a thread exists if using history
+        if self.history and not self.history.current_thread_id:
+            self.history.create_thread(metadata={"agent": self.name})
+
+        # Apply automatic context management before loading history
+        if self.history and self.auto_manage_context:
+            try:
+                # Use the configured summarize_model if available and strategy involves summarization
+                management_model = self.model
+                if self.summarize_model and self.context_strategy in ["smart", "summarize"]:
+                    management_model = self.summarize_model
+
+                self.history.manage_context_window(
+                    model=management_model,
+                    max_messages=self.max_context_messages,
+                    strategy=self.context_strategy
+                )
+            except Exception as e:
+                # Don't fail if context management fails
+                print(f"Warning: Context management failed: {e}")
+
+        # Load previous conversation history if available
+        self._load_history_into_memory()
+
         self._add_to_memory("user", input_data)
 
         prompt = self._build_initial_prompt(input_data)
 
         step = 0
 
-        while True:
-            # Increment step counter
-            step += 1
+        try:
+            while True:
+                # Increment step counter
+                step += 1
 
-            response = self.model.generate(prompt)
+                response = self.model.generate(prompt)
 
-            self._add_to_memory("assistant", response)
+                self._add_to_memory("assistant", response)
 
-            tool_call = self._parse_tool_call(response)
-            if tool_call:
-                tool_name = tool_call["tool"]
-                args = tool_call["args"]
+                tool_call = self._parse_tool_call(response)
+                if tool_call:
+                    tool_name = tool_call["tool"]
+                    args = tool_call["args"]
 
-                if tool_name not in self.tools:
-                    raise ValueError(f"Tool '{tool_name}' not found in agent's toolset.")
+                    if tool_name not in self.tools:
+                        raise ValueError(f"Tool '{tool_name}' not found in agent's toolset.")
 
-                tool_output = self.tools[tool_name].run(args)
-                
-                # Store tool result in a structured way
-                self._add_to_memory("tool", {
-                    "name": tool_name,
-                    "args": args,
-                    "output": tool_output
-                })
+                    tool_output = self.tools[tool_name].run(args)
 
-                if self.stop_conditions.should_stop(step - 1, self.temporary_memory):
-                    # Instead of returning generic message, return tool result
-                    return f"Tool result: {tool_output}"
+                    # Store tool result in a structured way
+                    self._add_to_memory("tool", {
+                        "name": tool_name,
+                        "args": args,
+                        "output": tool_output
+                    })
 
-                # Build follow-up prompt with full memory context and separate tool result
-                tools_prompt = self._render_tools_prompt() if self.tools else ""
-                conversation_history = "\n".join(
-                    [f"{item['role'].capitalize()}: {item['content']}" if item['role'] != "tool"
-                    else f"Tool '{item['content']['name']}' called with args:\n{item['content']['args']}\nOutput:\n{item['content']['output']}"
-                    for item in self.temporary_memory]
-                )
+                    if self.stop_conditions.should_stop(step - 1, self.temporary_memory):
+                        # Instead of returning generic message, return tool result
+                        result = f"Tool result: {tool_output}"
+                        self._sync_to_history()
+                        return result
 
-                # Create different instructions based on whether agent has more tools available
-                if self.tools:
-                    assistant_instruction = (
-                        f"Assistant: The tool has executed successfully. Based on the tool output above:\n"
-                        f"1. If you need to use another tool, respond with the tool JSON.\n"
-                        f"2. Otherwise, provide your final response that INCLUDES the actual tool results/data.\n"
-                        f"3. Do NOT just describe what you did - show the actual results. Unless mentioned otherwise.\n"
-                        f"DO NOT output JSON unless calling a tool."
-                    )
-                else:
-                    assistant_instruction = (
-                        f"Assistant: Based on the information above, provide your response in natural language."
+                    # Build follow-up prompt with full memory context and separate tool result
+                    conversation_history = "\n".join(
+                        [f"{item['role'].capitalize()}: {item['content']}" if item['role'] != "tool"
+                        else f"Tool '{item['content']['name']}' called with args:\n{item['content']['args']}\nOutput:\n{item['content']['output']}"
+                        for item in self.temporary_memory]
                     )
 
-                prompt = (
-                    f"{self.persona}\n\n{tools_prompt}\n\n"
-                    f"Conversation History:\n{conversation_history}\n\n"
-                    f"{assistant_instruction}"
-                )
+                    # Render follow-up prompt using template
+                    prompt = self._render_follow_up_prompt(
+                        conversation_history=conversation_history,
+                        has_tools=bool(self.tools)
+                    )
 
-                continue  # Go to next loop iteration
+                    continue  # Go to next loop iteration
 
-            # Check if we should stop before returning (avoid returning JSON)
-            if self.stop_conditions.should_stop(step, self.temporary_memory):
-                # Get the last meaningful output (not a tool call JSON)
-                for item in reversed(self.temporary_memory):
-                    if item['role'] == 'tool':
-                        return f"Based on the analysis: {item['content']['output']}"
-                return "Task completed with available information."
+                # Check if we should stop before returning (avoid returning JSON)
+                if self.stop_conditions.should_stop(step, self.temporary_memory):
+                    # Get the last meaningful output (not a tool call JSON)
+                    for item in reversed(self.temporary_memory):
+                        if item['role'] == 'tool':
+                            result = f"Based on the analysis: {item['content']['output']}"
+                            self._sync_to_history()
+                            return result
+                    result = "Task completed with available information."
+                    self._sync_to_history()
+                    return result
 
-            # No tool call, return final answer
-            return response
+                # No tool call, return final answer
+                self._sync_to_history()
+                return response
+        except Exception as e:
+            # Sync history even on error
+            self._sync_to_history()
+            raise e
 
     def _parse_tool_call(self, llm_output: str) -> Optional[Dict[str, Any]]:
         """
