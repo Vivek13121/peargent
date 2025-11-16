@@ -1,9 +1,9 @@
 """Test the Tracer class"""
 
-from peargent.observability.tracer import Tracer, get_tracer, configure_tracing
-from peargent.observability.store import InMemoryTracingStore
-from peargent.observability.span import SpanType
-from peargent.observability.trace import TraceStatus
+from peargent.telemetry.tracer import Tracer, get_tracer, configure_tracing
+from peargent.telemetry.store import InMemoryTracingStore
+from peargent.telemetry.span import SpanType
+from peargent.telemetry.trace import TraceStatus
 import time
 
 

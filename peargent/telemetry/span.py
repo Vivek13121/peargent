@@ -1,4 +1,4 @@
-#peargent/observability/span.py
+#peargent/telemetry/span.py
 
     # - Tracer (main class)
     # - Trace (one execution)
@@ -22,9 +22,10 @@ class SpanStatus(Enum):
     ERROR = "error"
     
 class Span:
-    def __init__(self, trace_id: str, span_type: SpanType, name: str, parent_id: Optional[str] = None):
-        self.span_id = uuid.uuid4().hex[:16]
-        self.parent_id = parent_id
+    def __init__(self, trace_id: str, span_type: SpanType, name: str, parent_id: Optional[str] = None, span_id: Optional[str] = None, parent_span_id: Optional[str] = None):
+        self.span_id = span_id or str(uuid.uuid4())
+        # Support both parent_id and parent_span_id for backwards compatibility
+        self.parent_id = parent_span_id or parent_id
         self.trace_id = trace_id
         self.span_type = span_type
         self.name = name
@@ -40,15 +41,22 @@ class Span:
         self.prompt: Optional[str] = None
         self.response: Optional[str] = None
         self.model: Optional[str] = None
-        
+
+        # LLM-specific data (standardized names for database storage)
+        self.llm_prompt: Optional[str] = None
+        self.llm_response: Optional[str] = None
+        self.llm_model: Optional[str] = None
+
         #Tool-specific data
         self.tool_name: Optional[str] = None
         self.tool_args: Optional[Dict] = None
         self.tool_output: Optional[Any] = None
-        
-        # Cost Tracking
-        self.token_prompt: Optional[int] = None
-        self.token_completion: Optional[int] = None
+
+        # Cost Tracking (standardized names for database storage)
+        self.prompt_tokens: Optional[int] = None
+        self.completion_tokens: Optional[int] = None
+        self.token_prompt: Optional[int] = None  # Backwards compatibility
+        self.token_completion: Optional[int] = None  # Backwards compatibility
         self.cost: Optional[float] = None
         
         # Error Tracking
@@ -124,11 +132,14 @@ class Span:
             Self for the method chaining.
         """
         if prompt is not None:
-            self.prompt = prompt
+            self.llm_prompt = prompt
+            self.prompt = prompt  # Keep for backwards compatibility
         if response is not None:
-            self.response = response
+            self.llm_response = response
+            self.response = response  # Keep for backwards compatibility
         if model is not None:
-            self.model = model
+            self.llm_model = model
+            self.model = model  # Keep for backwards compatibility
         return self
     
     def set_tool_data(
@@ -169,14 +180,16 @@ class Span:
             prompt_tokens: Number of tokens in the prompt.
             completion_tokens: Number of tokens in the completion.
             cost: Cost in USD for this operation.
-        
+
         Returns:
             Self for method chaining.
         """
         if prompt_tokens is not None:
-            self.token_prompt = prompt_tokens
+            self.prompt_tokens = prompt_tokens
+            self.token_prompt = prompt_tokens  # Keep for backwards compatibility
         if completion_tokens is not None:
-            self.token_completion = completion_tokens
+            self.completion_tokens = completion_tokens
+            self.token_completion = completion_tokens  # Keep for backwards compatibility
         if cost is not None:
             self.cost = cost
         return self

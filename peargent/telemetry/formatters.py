@@ -1,4 +1,4 @@
-# peargent/observability/formatters.py
+# peargent/telemetry/formatters.py
 
 """Formatters for displaying traces in various format.
 """

@@ -1,4 +1,4 @@
-# peargent/observability/tracer.py
+# peargent/telemetry/tracer.py
 
 """Tracer class for managing traces and spans.
 """
@@ -607,7 +607,7 @@ def configure_tracing(
         traces = tracer.list_traces()
 
         # With file store
-        from peargent.observability import FileTracingStore
+        from peargent.telemetry import FileTracingStore
         store = FileTracingStore("./traces")
         tracer = configure_tracing(store=store)
     """
@@ -625,8 +625,14 @@ def configure_tracing(
 def enable_tracing(
     store_type: str = "memory",
     storage_dir: str = "./traces",
+    connection_string: Optional[str] = None,
+    traces_table: str = "traces",
+    spans_table: str = "spans",
     enabled: bool = True,
     auto_save: bool = True,
+    async_db: bool = False,
+    max_queue_size: int = 1000,
+    num_workers: int = 2,
 ) -> Tracer:
     """Simplified tracing setup - configures and returns a tracer in one call.
 
@@ -634,20 +640,56 @@ def enable_tracing(
     configuration in a single call.
 
     Args:
-        store_type: Type of storage backend ("memory" or "file").
+        store_type: Type of storage backend ("memory", "file", "postgres", "sqlite").
         storage_dir: Directory for file storage (only used if store_type="file").
+        connection_string: Database connection string (required for "postgres" and "sqlite").
+            - PostgreSQL: "postgresql://user:password@host:port/database"
+            - SQLite: "sqlite:///path/to/database.db"
+        traces_table: Custom name for traces table (default: "traces").
+        spans_table: Custom name for spans table (default: "spans").
         enabled: Whether tracing is enabled.
         auto_save: Whether to automatically save traces when they end.
+        async_db: Use async database writes with background queue (default: False).
+        max_queue_size: Max pending operations for async writes (default: 1000).
+        num_workers: Number of background writer threads (default: 2).
 
     Returns:
         Configured tracer instance.
 
-    Example:
+    Examples:
         # In-memory tracing (default)
         tracer = enable_tracing()
 
         # File-based tracing
         tracer = enable_tracing(store_type="file", storage_dir="./my_traces")
+
+        # PostgreSQL tracing
+        tracer = enable_tracing(
+            store_type="postgres",
+            connection_string="postgresql://user:pass@localhost:5432/traces_db"
+        )
+
+        # SQLite tracing
+        tracer = enable_tracing(
+            store_type="sqlite",
+            connection_string="sqlite:///./traces.db"
+        )
+
+        # Custom table names
+        tracer = enable_tracing(
+            store_type="postgres",
+            connection_string="postgresql://user:pass@localhost:5432/mydb",
+            traces_table="my_traces",
+            spans_table="my_spans"
+        )
+
+        # Async database writes (non-blocking)
+        tracer = enable_tracing(
+            store_type="sqlite",
+            connection_string="sqlite:///./traces.db",
+            async_db=True,
+            num_workers=2
+        )
 
         # Use the tracer
         traces = tracer.list_traces()
@@ -658,8 +700,51 @@ def enable_tracing(
     elif store_type == "file":
         from .store import FileTracingStore
         store = FileTracingStore(storage_dir)
+    elif store_type == "postgres":
+        if not connection_string:
+            raise ValueError("connection_string is required for PostgreSQL store")
+
+        if async_db:
+            from .async_database_store import AsyncPostgreSQLTracingStore
+            store = AsyncPostgreSQLTracingStore(
+                connection_string=connection_string,
+                traces_table=traces_table,
+                spans_table=spans_table,
+                max_queue_size=max_queue_size,
+                num_workers=num_workers
+            )
+        else:
+            from .database_store import PostgreSQLTracingStore
+            store = PostgreSQLTracingStore(
+                connection_string=connection_string,
+                traces_table=traces_table,
+                spans_table=spans_table
+            )
+    elif store_type == "sqlite":
+        if not connection_string:
+            raise ValueError("connection_string is required for SQLite store")
+
+        if async_db:
+            from .async_database_store import AsyncSQLiteTracingStore
+            store = AsyncSQLiteTracingStore(
+                connection_string=connection_string,
+                traces_table=traces_table,
+                spans_table=spans_table,
+                max_queue_size=max_queue_size,
+                num_workers=num_workers
+            )
+        else:
+            from .database_store import SQLiteTracingStore
+            store = SQLiteTracingStore(
+                connection_string=connection_string,
+                traces_table=traces_table,
+                spans_table=spans_table
+            )
     else:
-        raise ValueError(f"Unknown store_type: {store_type}. Use 'memory' or 'file'.")
+        raise ValueError(
+            f"Unknown store_type: {store_type}. "
+            "Use 'memory', 'file', 'postgres', or 'sqlite'."
+        )
 
     return configure_tracing(
         store=store,

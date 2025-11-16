@@ -1,13 +1,13 @@
-# peargent/observability/__init__.py
+# peargent/telemetry/__init__.py
 
 """
-Observability module for tracing agent executions.
+Telemetry module for tracing agent executions.
 
 This module provides comprehensive tracing capabilities for agent operations,
 including timing, cost tracking, and detailed execution logs.
 
 Usage:
-    from peargent.observability import configure_tracing, get_tracer
+    from peargent.telemetry import configure_tracing, get_tracer
 
     # Configure tracing
     configure_tracing(enabled=True)

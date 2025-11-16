@@ -1,9 +1,9 @@
 """Debug token storage issue"""
 
-from peargent.observability.store import FileTracingStore, InMemoryTracingStore
-from peargent.observability.trace import Trace
-from peargent.observability.span import SpanType
-from peargent.observability.tracer import Tracer, configure_tracing, get_tracer
+from peargent.telemetry.store import FileTracingStore, InMemoryTracingStore
+from peargent.telemetry.trace import Trace
+from peargent.telemetry.span import SpanType
+from peargent.telemetry.tracer import Tracer, configure_tracing, get_tracer
 import tempfile
 import shutil
 import json
@@ -16,7 +16,7 @@ def test_store_debug():
     store = InMemoryTracingStore()
     
     # Create a simple trace manually
-    from peargent.observability.trace import Trace
+    from peargent.telemetry.trace import Trace
     
     trace = Trace(agent_name="TestAgent", input_data="Test")
     trace.start()

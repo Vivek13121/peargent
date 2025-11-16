@@ -5,7 +5,8 @@ This example demonstrates how the improved tracing DSL works with agent pools.
 Now you can enable tracing for ALL agents in a pool with a single parameter!
 """
 
-from peargent import create_agent, create_pool, enable_tracing
+from peargent import create_agent, create_pool
+from peargent.telemetry import enable_tracing
 from peargent.models import groq
 
 # ============================================================================

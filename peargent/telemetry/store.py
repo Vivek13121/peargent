@@ -1,4 +1,4 @@
-#peargent/observability/store.py
+#peargent/telemetry/store.py
 
 """Storage backends for persisting traces and spans.
 """

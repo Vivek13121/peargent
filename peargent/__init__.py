@@ -43,15 +43,6 @@ try:
 except ImportError:
     SQLiteHistoryStore = None
 
-# Observability imports
-from .observability import (
-    enable_tracing,
-    configure_tracing,
-    get_tracer,
-    InMemoryTracingStore,
-    FileTracingStore,
-)
-
 # Define what gets imported with "from peargent import *"
 __all__ = [
     'create_agent',
@@ -80,12 +71,6 @@ __all__ = [
     'Thread',
     'Message',
     'HistoryConfig',
-    # Observability
-    'enable_tracing',
-    'configure_tracing',
-    'get_tracer',
-    'InMemoryTracingStore',
-    'FileTracingStore',
 ]
 
 # Add SQL stores to __all__ if available

@@ -1,10 +1,10 @@
 """Test formatters"""
 
-from peargent.observability.formatters import (
+from peargent.telemetry.formatters import (
     TerminalFormatter, JSONFormatter, MarkdownFormatter, format_trace
 )
-from peargent.observability.trace import Trace, TraceStatus
-from peargent.observability.span import SpanType
+from peargent.telemetry.trace import Trace, TraceStatus
+from peargent.telemetry.span import SpanType
 
 
 def create_sample_trace():

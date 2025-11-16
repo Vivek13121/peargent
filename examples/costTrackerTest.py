@@ -1,6 +1,6 @@
 """Test the CostTracker"""
 
-from peargent.observability.cost_tracker import (
+from peargent.telemetry.cost_tracker import (
     CostTracker, get_cost_tracker, count_tokens, calculate_cost, PRICING
 )
 

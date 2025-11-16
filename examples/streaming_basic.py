@@ -5,7 +5,8 @@ Demonstrates simple text streaming from agents.
 """
 
 import sys
-from peargent import create_agent, enable_tracing
+from peargent import create_agent
+from peargent.telemetry import enable_tracing
 from peargent.models import groq
 
 # Enable tracing

@@ -6,7 +6,8 @@ Demonstrates async streaming with astream() and aobserve().
 
 import asyncio
 import sys
-from peargent import create_agent, create_pool, enable_tracing
+from peargent import create_agent, create_pool
+from peargent.telemetry import enable_tracing
 from peargent.models import groq
 from peargent.core.streaming import UpdateType
 

@@ -5,9 +5,10 @@ This example demonstrates all the ways to get aggregate statistics
 across traces, including filtering by session, user, and agent.
 """
 
-from peargent import create_agent, create_pool, create_routing_agent, enable_tracing
+from peargent import create_agent, create_pool, create_routing_agent
+from peargent.telemetry import enable_tracing
 from peargent.models import groq
-from peargent.observability import set_session_id, set_user_id
+from peargent.telemetry import set_session_id, set_user_id
 
 # ============================================================================
 # Setup: Enable tracing

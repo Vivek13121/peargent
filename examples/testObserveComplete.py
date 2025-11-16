@@ -2,8 +2,8 @@
 
 from peargent import create_agent
 from peargent.models import groq
-from peargent.observability import configure_tracing, get_tracer, format_trace
-from peargent.observability.store import InMemoryTracingStore
+from peargent.telemetry import configure_tracing, get_tracer, format_trace
+from peargent.telemetry.store import InMemoryTracingStore
 
 # Configure tracing
 store = InMemoryTracingStore()

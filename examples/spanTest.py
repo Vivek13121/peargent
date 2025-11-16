@@ -1,4 +1,4 @@
-from peargent.observability.span import Span, SpanType, SpanStatus
+from peargent.telemetry.span import Span, SpanType, SpanStatus
 import time
 
 def test_basic_span():

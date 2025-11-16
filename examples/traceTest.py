@@ -1,5 +1,5 @@
-from peargent.observability.trace import Trace, TraceStatus
-from peargent.observability.span import SpanType, SpanStatus
+from peargent.telemetry.trace import Trace, TraceStatus
+from peargent.telemetry.span import SpanType, SpanStatus
 import time
 
 def test_basic_trace():

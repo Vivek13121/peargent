@@ -4,7 +4,8 @@ Improved Tracing DSL Example
 This example demonstrates the new, simplified tracing API.
 """
 
-from peargent import create_agent, enable_tracing
+from peargent import create_agent
+from peargent.telemetry import enable_tracing
 from peargent.models import groq
 
 # ============================================================================
@@ -78,7 +79,7 @@ print(f"\nFound {len(file_traces)} traces in file storage")
 # OPTION 3: Advanced usage with configure_tracing (for custom stores)
 # ============================================================================
 
-from peargent import configure_tracing, FileTracingStore
+from peargent.telemetry import configure_tracing, FileTracingStore
 
 # Create a custom store with specific settings
 custom_store = FileTracingStore(storage_dir="./custom_traces")

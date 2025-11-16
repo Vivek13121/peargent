@@ -4,8 +4,8 @@ Test to demonstrate 6 decimal place cost formatting.
 This manually creates a trace with cost data to show the improved formatting.
 """
 
-from peargent.observability import Trace, TraceStatus, Span, SpanType
-from peargent.observability.formatters import TerminalFormatter
+from peargent.telemetry import Trace, TraceStatus, Span, SpanType
+from peargent.telemetry.formatters import TerminalFormatter
 
 # Create a trace with cost data
 trace = Trace(

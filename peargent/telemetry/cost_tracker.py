@@ -1,4 +1,4 @@
-# peargent/observability/cost_tracker.py
+# peargent/telemetry/cost_tracker.py
 
 """Cost tracking for LLM API calls.
 

@@ -6,7 +6,8 @@ When tracing=True on a pool, all agents get tracing enabled automatically,
 unless an agent explicitly has tracing=False.
 """
 
-from peargent import create_agent, create_pool, enable_tracing
+from peargent import create_agent, create_pool
+from peargent.telemetry import enable_tracing
 from peargent.models import groq
 
 # ============================================================================

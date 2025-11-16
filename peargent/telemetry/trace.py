@@ -1,4 +1,4 @@
-# peargent/observability/trace.py
+# peargent/telemetry/trace.py
 
 """Trace class for tracking the complete agent executions.
 """
@@ -43,7 +43,7 @@ class Trace:
             user_id: Optional user identifier.
             trace_id: Optional custom trace ID.
         """
-        self.trace_id = trace_id or uuid.uuid4().hex
+        self.trace_id = trace_id or str(uuid.uuid4())
         self.session_id = session_id
         self.user_id = user_id
         self.agent_name = agent_name

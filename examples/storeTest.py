@@ -1,8 +1,8 @@
 """Test storage backends"""
 
-from peargent.observability.store import InMemoryTracingStore, FileTracingStore
-from peargent.observability.trace import Trace
-from peargent.observability.span import SpanType
+from peargent.telemetry.store import InMemoryTracingStore, FileTracingStore
+from peargent.telemetry.trace import Trace
+from peargent.telemetry.span import SpanType
 import tempfile
 import shutil
 
