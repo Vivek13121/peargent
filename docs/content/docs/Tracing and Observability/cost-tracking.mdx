@@ -1,0 +1,155 @@
+---
+title: Cost Tracking
+description: Track and optimize LLM API costs with automatic token counting and pricing calculations.
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Cost Tracking</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Track and optimize LLM API costs with automatic token counting and pricing
+</h3>
+
+Peargent automatically tracks token usage and calculates costs for all LLM API calls. This helps you monitor spending, optimize prompts, and control costs in production.
+
+| Use cost tracking for production systems, billing, optimization, or prompt tuning.
+
+## How Cost Tracking Works
+
+Cost tracking is automatic when tracing is enabled:
+
+1. **Token Counting**: Peargent counts tokens in prompts and completions using tiktoken (or estimates if tiktoken is unavailable)
+2. **Cost Calculation**: Costs are calculated based on the model's pricing per million tokens
+3. **Aggregation**: Total costs are summed across all spans in a trace
+
+```python
+from peargent import create_agent
+from peargent.telemetry import enable_tracing
+from peargent.models import openai
+
+# Enable tracing to start cost tracking // [!code highlight:2]
+tracer = enable_tracing()
+
+agent = create_agent(
+    name="CostTest",
+    description="Agent for cost tracking",
+    persona="You are helpful. Be concise.",
+    model=openai("gpt-4o"),
+    tracing=True  # Enable cost tracking
+)
+
+result = agent.run("What is 2+2? Answer in one sentence.")
+
+# Get cost information // [!code highlight:2]
+traces = tracer.list_traces()
+trace = traces[0]
+
+print(f"Model: {trace.spans[0].model}")
+print(f"Prompt tokens: {trace.spans[0].token_prompt}")
+print(f"Completion tokens: {trace.spans[0].token_completion}")
+print(f"Total cost: ${trace.total_cost:.6f}")
+```
+
+Output:
+```
+Model: gpt-4o
+Prompt tokens: 89
+Completion tokens: 38
+Total cost: $0.000082
+```
+
+## Custom Model Pricing
+
+Add pricing for custom or new models:
+
+```python
+from peargent.telemetry import enable_tracing
+
+tracer = enable_tracing()
+
+# Add custom pricing (prices per million tokens)
+tracer.add_custom_pricing(
+    model="my-custom-model",
+    prompt_price=1.50,      # $1.50 per million tokens
+    completion_price=3.00   # $3.00 per million tokens
+)
+```
+⚠️ **Note:** Custom pricing only affects cost tracking, not actual API billing.
+
+## Cost Calculation Formula
+
+Costs are calculated using this formula:
+
+```python
+prompt_cost = (prompt_tokens / 1,000,000) * prompt_price
+completion_cost = (completion_tokens / 1,000,000) * completion_price
+total_cost = prompt_cost + completion_cost
+```
+
+**Example:** For `gpt-4o`: <br/>
+(Assuming prompt price = $0.59 and completion price = $0.79 per million tokens)
+- Prompt tokens: 89
+- Completion tokens: 38
+- Prompt cost: (89 / 1,000,000) × $0.59 = $0.000052
+- Completion cost: (38 / 1,000,000) × $0.79 = $0.000030
+- **Total cost: $0.000082**
+
+## Viewing Cost Information
+
+### Per-Trace Costs
+```python
+traces = tracer.list_traces()
+
+for trace in traces:
+    print(f"Trace {trace.id}:")
+    print(f"  Agent: {trace.agent_name}")
+    print(f"  Total tokens: {trace.total_tokens}")
+    print(f"  Total cost: ${trace.total_cost:.6f}")
+
+    # Breakdown by span
+    for span in trace.spans:
+        if span.span_type == "llm":
+            print(f"  LLM Call: {span.model}")
+            print(f"    Prompt: {span.token_prompt} tokens")
+            print(f"    Completion: {span.token_completion} tokens")
+            print(f"    Cost: ${span.cost:.6f}")
+```
+
+### Summary Statistics
+```python
+tracer.print_summary()
+```
+
+Output:
+```
+================================================================================
+TRACE SUMMARY
+================================================================================
+Total Traces: 25
+Total Tokens: 12,456 (prompt: 7,234, completion: 5,222)
+Total Cost: $0.008123
+Average Cost per Trace: $0.000325
+Average Tokens per Trace: 498
+
+Top Agents by Usage:
+  1. Researcher: 12 traces ($0.004561)
+  2. Writer: 8 traces ($0.002134)
+  3. Analyst: 5 traces ($0.001428)
+```
+
+
+## Best Practices
+
+1. **Always enable tracing in production** to track costs
+2. **Monitor costs daily** using `tracer.print_summary()`
+3. **Set budget alerts** for unexpected cost spikes
+4. **Compare models** to find the best cost/quality ratio
+5. **Optimize prompts** to reduce token usage
+6. **Cache repeated queries** to avoid duplicate costs
+7. **Track costs per user** for billing or quota enforcement
+8. **Use cheaper models** for simple tasks (e.g., gemini-2.0-flash instead of gpt-4o)
+
+## What's Next?
+
+**<u>[Database Storage](/docs/Tracing%20and%20Observability/database-storage)</u>**
+Set up persistent trace storage with SQLite or PostgreSQL for long-term cost analysis and reporting.

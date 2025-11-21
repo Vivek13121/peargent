@@ -3,11 +3,18 @@ title: History
 description: Persistent conversation memory that allows agents to remember past interactions across sessions.
 ---
 
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">History</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Persistent conversation memory that allows agents to remember past interactions across sessions.
+</h3>
+
 History is Peargent’s **persistent conversation memory** system. It allows agents and pools to remember past interactions across sessions, enabling continuity, context-awareness, and long-running workflows.
 
 Think of history like a **notebook** your agent writes in. Each message, tool call, and response is recorded so the agent can look back and recall what happened earlier.
 
-You can pass a `HistoryConfig` to any **<u>Agent</u>** or **<u>Pool</u>**. If a pool receives a history, it overrides individual agent histories so all agents share the same conversation thread. History can be stored using backends such as in-memory, file, SQLite, PostgreSQL, Redis, or custom storage backends.
+You can pass a `HistoryConfig` to any **<u>[Agent](/docs/agents)</u>** or **<u>[Pool](/docs/pools)</u>**. If a pool receives a history, it overrides individual agent histories so all agents share the same conversation thread. History can be stored using backends such as in-memory, file, SQLite, PostgreSQL, Redis, or custom storage backends.
 
 
 ## Creating History
@@ -15,6 +22,8 @@ You can pass a `HistoryConfig` to any **<u>Agent</u>** or **<u>Pool</u>**. If a 
 To create a history, you need to pass a `HistoryConfig` to the `create_agent` or `create_pool` function. HistoryConfig is a configuration object that allows you to configure the history of an agent or pool. 
 
 By defautl HistoryConfig uses `InMemory()` storage backend (temporary storage - data is lost when program exits).
+
+### Adding history to Agents:
 
 ```python
 from peargent import create_agent
@@ -37,6 +46,25 @@ agent.run("What's my name?")
 # Output: "Your name is Alice"
 ```
 
+### Adding history to Pools:
+```python
+from peargent import create_pool
+from peargent.history import HistoryConfig
+from peargent.models import groq
+
+pool = create_pool(
+    agents=[agent1, agent2]
+    history=HistoryConfig()
+)
+
+# First conversation
+pool.run("My name is Alice")
+
+# Later conversation - agent remembers
+pool.run("What's my name?")
+# Output: "Your name is Alice"
+```
+
 ## How History Works
 
 <div className='fd-steps [&_h3]:fd-step'>
@@ -50,11 +78,11 @@ Each new user message, tool call, and agent response is added to the conversatio
 
 ### Manage Context
 
-If the conversation grows beyond `max_context_messages`, the configured **<u>strategy</u>** (trim or summarize) is applied to keep the context window manageable.
+If the conversation grows beyond `max_context_messages`, the configured **<u>[strategy](/docs/history#strategies)</u>** (trim or summarize) is applied to keep the context window manageable.
 
 ### Persist Data
 
-All updates are saved back to the **<u>storage backend</u>**, ensuring the conversation history is retained across sessions and future runs.
+All updates are saved back to the **<u>[storage backend](/docs/history#storage-backends)</u>**, ensuring the conversation history is retained across sessions and future runs.
 
 </div>
 
@@ -174,7 +202,7 @@ history = HistoryConfig(
 )
 ```
 
-<Callout type="info"> `summarize_model` is used only with `"summarize"` and `"smart"` strategies. If not provided, the **<u>Agent</u>**'s model will be used. </Callout>
+<Callout type="info"> `summarize_model` is used only with `"summarize"` and `"smart"` strategies. If not provided, the **<u>[Agent](/docs/agents)</u>**'s model will be used. </Callout>
 
 ## Parameters
 
@@ -186,4 +214,4 @@ history = HistoryConfig(
 | `summarize_model` | `Model` | `None` | LLM model for summarization (defaults to agent's model if not provided) | No |
 | `store` | `StorageType` | `InMemory()` | Storage backend: `InMemory()`, `File()`, `Sqlite()`, `Postgresql()`, `Redis()` | No |
 
-Learn more about Advance Features in **<u>[Advanced Features](/docs/advanced)</u>**.
+Learn more about Advance Features in **<u>Advanced Features</u>**.

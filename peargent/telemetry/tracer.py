@@ -474,8 +474,40 @@ class Tracer:
             print(f"  Avg Tokens/Trace: {stats['avg_tokens_per_trace']:.1f}")
             print()
             print("=" * 80)
-        
-    # context manager 
+
+    def add_custom_pricing(
+        self,
+        model: str,
+        prompt_price: float,
+        completion_price: float
+    ):
+        """Add or update custom pricing for a model.
+
+        This is a convenience method that delegates to the global cost tracker.
+
+        Args:
+            model: Model name
+            prompt_price: Price per million prompt tokens
+            completion_price: Price per million completion tokens
+
+        Example:
+            tracer = enable_tracing()
+            tracer.add_custom_pricing(
+                model="my-custom-model",
+                prompt_price=1.50,
+                completion_price=3.00
+            )
+        """
+        from .cost_tracker import get_cost_tracker
+
+        tracker = get_cost_tracker()
+        tracker.add_custom_pricing(
+            model=model,
+            prompt_price=prompt_price,
+            completion_price=completion_price
+        )
+
+    # context manager
     @contextmanager
     def trace_agent_run(
         self,

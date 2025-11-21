@@ -17,6 +17,11 @@
     "states",
     "history",
     "models",
-    "long_term_memory"
+    "long_term_memory",
+    "---Advanced Features---",
+    "Structured Output",
+    "Error Handling in Tools",
+    "Tracing and Observability",
+    "Streaming"
   ]
 }

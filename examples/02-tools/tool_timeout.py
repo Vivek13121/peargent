@@ -30,6 +30,7 @@ tool_no_timeout = create_tool(
     call_function=slow_operation
 )
 
+
 start = time.time()
 try:
     result = tool_no_timeout.run({"duration": 2})

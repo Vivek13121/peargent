@@ -1,0 +1,606 @@
+---
+title: Async Streaming
+description: Use async streaming for concurrent agent execution and web servers.
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Async Streaming</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Use async streaming for concurrent agent execution and web servers
+</h3>
+
+Async streaming enables non-blocking, concurrent agent execution. Perfect for web servers (FastAPI, Django), high-throughput systems, and running multiple agents in parallel.
+
+## Why Async Streaming?
+
+**Sync streaming** blocks while waiting for LLM responses:
+
+```python
+# Blocks for 2-3 seconds per agent
+for chunk in agent1.stream("query"):  # Waits 2s
+    print(chunk, end="")
+
+for chunk in agent2.stream("query"):  # Waits 2s
+    print(chunk, end="")
+
+# Total time: ~4-6 seconds (sequential)
+```
+
+**Async streaming** allows concurrent execution:
+
+```python
+# Runs concurrently
+async for chunk in agent1.astream("query"):  # Starts immediately
+    print(chunk, end="")
+
+async for chunk in agent2.astream("query"):  # Runs in parallel
+    print(chunk, end="")
+
+# Total time: ~2-3 seconds (parallel)
+```
+
+**Benefits:**
+* **Concurrent Execution** - Run multiple agents in parallel
+* **Better Resource Utilization** - Don't block while waiting for I/O
+* **Scalability** - Handle many concurrent requests
+* **Web Server Ready** - Perfect for FastAPI, Django, asyncio apps
+
+## Async Streaming Methods
+
+Peargent provides async versions of all streaming methods:
+
+| Sync Method | Async Method | Returns |
+|-------------|--------------|---------|
+| `agent.stream()` | `agent.astream()` | Text chunks |
+| `agent.stream_observe()` | `agent.astream_observe()` | Rich updates |
+| `pool.stream()` | `pool.astream()` | Text chunks |
+| `pool.stream_observe()` | `pool.astream_observe()` | Rich updates |
+
+The API is identical - just add `a` prefix and use `async for`.
+
+## Quick Start
+
+### Basic Async Streaming
+
+```python
+import asyncio
+from peargent import create_agent
+from peargent.models import groq
+
+agent = create_agent(
+    name="AsyncAgent",
+    description="Async streaming agent",
+    persona="You are helpful and concise.",
+    model=groq("llama-3.3-70b-versatile")
+)
+
+async def main():
+    # Async streaming
+    async for chunk in agent.astream("What is Python?"):
+        print(chunk, end="", flush=True)
+
+# Run async function
+asyncio.run(main())
+```
+
+### Async Streaming with Metadata
+
+```python
+import asyncio
+
+async def main():
+    async for update in agent.astream_observe("What is Python?"):
+        if update.is_agent_start:
+            print(f"[START] {update.agent}")
+
+        elif update.is_token:
+            print(update.content, end="", flush=True)
+
+        elif update.is_agent_end:
+            print(f"\n[DONE] {update.tokens} tokens, ${update.cost:.6f}")
+
+asyncio.run(main())
+```
+
+## Concurrent Agent Execution
+
+Run multiple agents in parallel using `asyncio.gather()`:
+
+```python
+import asyncio
+from peargent import create_agent
+from peargent.models import groq
+
+# Create agents
+agent1 = create_agent(
+    name="Agent1",
+    description="First agent",
+    persona="You are concise.",
+    model=groq("llama-3.3-70b-versatile")
+)
+
+agent2 = create_agent(
+    name="Agent2",
+    description="Second agent",
+    persona="You are concise.",
+    model=groq("llama-3.3-70b-versatile")
+)
+
+agent3 = create_agent(
+    name="Agent3",
+    description="Third agent",
+    persona="You are concise.",
+    model=groq("llama-3.3-70b-versatile")
+)
+
+async def run_agent(agent, query, label):
+    """Run agent and collect response."""
+    print(f"[{label}] Starting: {query[:30]}...")
+    response = ""
+
+    async for chunk in agent.astream(query):
+        response += chunk
+
+    print(f"[{label}] Complete: {len(response)} chars")
+    return response
+
+async def main():
+    # Run all agents concurrently
+    results = await asyncio.gather(
+        run_agent(agent1, "What is 2+2?", "Agent1"),
+        run_agent(agent2, "What is the capital of France?", "Agent2"),
+        run_agent(agent3, "What color is the sky?", "Agent3")
+    )
+
+    print("\nResults:")
+    for i, result in enumerate(results, 1):
+        print(f"{i}. {result[:60]}...")
+
+asyncio.run(main())
+```
+
+Output:
+```
+[Agent1] Starting: What is 2+2?...
+[Agent2] Starting: What is the capital of France?...
+[Agent3] Starting: What color is the sky?...
+[Agent1] Complete: 15 chars
+[Agent2] Complete: 28 chars
+[Agent3] Complete: 23 chars
+
+Results:
+1. 2+2 equals 4.
+2. The capital of France is Paris.
+3. The sky is blue.
+```
+
+All three agents run **concurrently**, reducing total execution time.
+
+## Web Server Integration
+
+### FastAPI Streaming
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from peargent import create_agent
+from peargent.models import groq
+
+app = FastAPI()
+
+agent = create_agent(
+    name="ChatAgent",
+    description="Chat agent",
+    persona="You are helpful",
+    model=groq("llama-3.3-70b-versatile")
+)
+
+@app.get("/chat")
+async def chat(query: str):
+    """Stream agent response to client."""
+    async def generate():
+        async for chunk in agent.astream(query):
+            yield chunk
+
+    return StreamingResponse(generate(), media_type="text/plain")
+
+# Run with: uvicorn main:app --reload
+```
+
+### FastAPI with Metadata
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import json
+
+@app.get("/chat-observe")
+async def chat_observe(query: str):
+    """Stream with metadata."""
+    async def generate():
+        async for update in agent.astream_observe(query):
+            if update.is_token:
+                yield update.content
+            elif update.is_agent_end:
+                # Send metadata as JSON
+                metadata = {
+                    "tokens": update.tokens,
+                    "cost": update.cost,
+                    "duration": update.duration
+                }
+                yield f"\n\n<!-- {json.dumps(metadata)} -->"
+
+    return StreamingResponse(generate(), media_type="text/plain")
+```
+
+### Server-Sent Events (SSE)
+
+```python
+from fastapi import FastAPI
+from sse_starlette.sse import EventSourceResponse
+
+@app.get("/stream-sse")
+async def stream_sse(query: str):
+    """Stream using Server-Sent Events."""
+    async def generate():
+        async for update in agent.astream_observe(query):
+            if update.is_agent_start:
+                yield {
+                    "event": "start",
+                    "data": json.dumps({"agent": update.agent})
+                }
+
+            elif update.is_token:
+                yield {
+                    "event": "token",
+                    "data": update.content
+                }
+
+            elif update.is_agent_end:
+                yield {
+                    "event": "end",
+                    "data": json.dumps({
+                        "tokens": update.tokens,
+                        "cost": update.cost
+                    })
+                }
+
+    return EventSourceResponse(generate())
+```
+
+## Async Pool Streaming
+
+Async pools support streaming with `astream()` and `astream_observe()`:
+
+```python
+import asyncio
+from peargent import create_pool
+from peargent.core.streaming import UpdateType
+
+async def main():
+    pool = create_pool(
+        agents=[researcher, writer, reviewer],
+        router=my_router,
+        max_iter=3
+    )
+
+    async for update in pool.astream_observe("Research AI"):
+        if update.type == UpdateType.POOL_START:
+            print("[POOL START]")
+
+        elif update.is_agent_start:
+            print(f"\n[{update.agent}] ", end="", flush=True)
+
+        elif update.is_token:
+            print(update.content, end="", flush=True)
+
+        elif update.is_agent_end:
+            print(f"\n[{update.agent} DONE] {update.tokens} tokens")
+
+        elif update.type == UpdateType.POOL_END:
+            total_tokens = update.metadata.get('total_tokens', 0)
+            print(f"\n[POOL END] Total: {total_tokens} tokens")
+
+asyncio.run(main())
+```
+
+## Real-Time Cost Tracking
+
+Track costs across concurrent agents:
+
+```python
+import asyncio
+
+total_cost = 0.0
+total_tokens = 0
+
+async def run_with_tracking(agent, query):
+    """Run agent and track costs."""
+    global total_cost, total_tokens
+
+    async for update in agent.astream_observe(query):
+        if update.is_token:
+            print(update.content, end="", flush=True)
+
+        elif update.is_agent_end:
+            total_cost += update.cost or 0.0
+            total_tokens += update.tokens or 0
+            print(f"\n  {update.agent}: {update.tokens} tokens, ${update.cost:.6f}")
+
+async def main():
+    # Run multiple queries concurrently
+    await asyncio.gather(
+        run_with_tracking(agent, "What is 2+2?"),
+        run_with_tracking(agent, "What is the capital of France?"),
+        run_with_tracking(agent, "What is machine learning?")
+    )
+
+    print(f"\nTotal: {total_tokens} tokens, ${total_cost:.6f}")
+
+asyncio.run(main())
+```
+
+## Async Context Managers
+
+Use async context managers for resource management:
+
+```python
+import asyncio
+from peargent import create_agent
+from peargent.telemetry import enable_tracing
+
+async def main():
+    # Enable tracing
+    tracer = enable_tracing()
+
+    agent = create_agent(
+        name="AsyncAgent",
+        description="Agent",
+        persona="You are helpful",
+        model=groq("llama-3.3-70b-versatile"),
+        tracing=True
+    )
+
+    try:
+        # Run agent
+        async for chunk in agent.astream("What is Python?"):
+            print(chunk, end="", flush=True)
+
+    finally:
+        # Cleanup (if needed)
+        print("\nCleaning up...")
+
+asyncio.run(main())
+```
+
+## Error Handling
+
+Handle errors in async streaming:
+
+```python
+import asyncio
+
+async def safe_stream(agent, query):
+    """Stream with error handling."""
+    try:
+        async for update in agent.astream_observe(query):
+            if update.is_token:
+                print(update.content, end="", flush=True)
+
+            elif update.is_agent_end:
+                print(f"\n✓ Success: {update.tokens} tokens")
+
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+
+async def main():
+    await safe_stream(agent, "query that might fail")
+
+asyncio.run(main())
+```
+
+## Timeouts
+
+Add timeouts to prevent hanging:
+
+```python
+import asyncio
+
+async def stream_with_timeout(agent, query, timeout=10.0):
+    """Stream with timeout."""
+    try:
+        async with asyncio.timeout(timeout):
+            async for chunk in agent.astream(query):
+                print(chunk, end="", flush=True)
+
+    except asyncio.TimeoutError:
+        print(f"\n⏱️ Timeout after {timeout}s")
+
+async def main():
+    await stream_with_timeout(agent, "Long query...", timeout=5.0)
+
+asyncio.run(main())
+```
+
+## Background Tasks
+
+Run agents in background tasks:
+
+```python
+import asyncio
+
+async def background_agent(agent, query):
+    """Run agent in background."""
+    print(f"[BACKGROUND] Starting: {query[:30]}...")
+
+    response = ""
+    async for chunk in agent.astream(query):
+        response += chunk
+
+    print(f"[BACKGROUND] Complete: {len(response)} chars")
+    return response
+
+async def main():
+    # Start background task
+    task = asyncio.create_task(
+        background_agent(agent, "Explain quantum computing")
+    )
+
+    # Do other work
+    print("Doing other work...")
+    await asyncio.sleep(1)
+    print("Still doing work...")
+
+    # Wait for background task
+    result = await task
+    print(f"Background result: {result[:50]}...")
+
+asyncio.run(main())
+```
+
+## Best Practices
+
+### 1. Use `asyncio.gather()` for Concurrent Execution
+
+Run multiple agents in parallel:
+
+```python
+results = await asyncio.gather(
+    agent1.astream("query1"),
+    agent2.astream("query2"),
+    agent3.astream("query3")
+)
+```
+
+### 2. Handle Timeouts
+
+Always use timeouts for production applications:
+
+```python
+async with asyncio.timeout(10.0):
+    async for chunk in agent.astream(query):
+        print(chunk, end="")
+```
+
+### 3. Use Try/Except for Error Handling
+
+Handle errors gracefully:
+
+```python
+try:
+    async for chunk in agent.astream(query):
+        print(chunk, end="")
+except Exception as e:
+    logger.error(f"Streaming error: {e}")
+```
+
+### 4. Flush Output
+
+Always flush output for real-time display:
+
+```python
+async for chunk in agent.astream(query):
+    print(chunk, end="", flush=True)  # ← flush=True
+```
+
+### 5. Use Async Context Managers
+
+Manage resources properly:
+
+```python
+async with some_resource() as resource:
+    async for chunk in agent.astream(query):
+        resource.write(chunk)
+```
+
+## Performance Notes
+
+### Sync vs Async Performance
+
+| Scenario | Sync Time | Async Time | Speedup |
+|----------|-----------|------------|---------|
+| 1 agent | ~2s | ~2s | 1x (same) |
+| 3 agents (sequential) | ~6s | ~2s | 3x faster |
+| 10 agents (sequential) | ~20s | ~2s | 10x faster |
+
+Async streaming is **most beneficial** when:
+- Running multiple agents concurrently
+- Building web servers (FastAPI, Django)
+- Handling many concurrent requests
+- I/O-bound operations dominate
+
+Async streaming has **minimal benefit** when:
+- Running a single agent
+- CPU-bound operations dominate
+- Simple scripts or notebooks
+
+## Common Use Cases
+
+### 1. Concurrent Multi-Agent Pipeline
+
+```python
+async def research_pipeline(query):
+    """Run multi-agent pipeline concurrently."""
+    # Research phase
+    research_tasks = [
+        researcher1.astream(f"Research {query} from perspective 1"),
+        researcher2.astream(f"Research {query} from perspective 2"),
+        researcher3.astream(f"Research {query} from perspective 3")
+    ]
+
+    research_results = await asyncio.gather(*research_tasks)
+
+    # Combine and summarize
+    combined = " ".join(research_results)
+    summary = await summarizer.astream(f"Summarize: {combined}")
+
+    return summary
+```
+
+### 2. Real-Time Dashboard
+
+```python
+async def dashboard_update(agent, query):
+    """Update dashboard in real-time."""
+    start_time = time.time()
+    tokens = 0
+
+    async for update in agent.astream_observe(query):
+        if update.is_token:
+            tokens += 1
+            elapsed = time.time() - start_time
+            # Update dashboard
+            dashboard.update(
+                tokens=tokens,
+                elapsed=elapsed,
+                text=update.content
+            )
+
+        elif update.is_agent_end:
+            dashboard.finish(
+                total_tokens=update.tokens,
+                cost=update.cost
+            )
+```
+
+### 3. Batch Processing
+
+```python
+async def batch_process(queries):
+    """Process multiple queries concurrently."""
+    tasks = [agent.astream(query) for query in queries]
+    results = await asyncio.gather(*tasks)
+    return results
+```
+
+## What's Next?
+
+**<u>[Streaming](/docs/Streaming)</u>**
+Learn about basic streaming with `stream()` for simple use cases.
+
+**<u>[Stream Observe](/docs/Streaming/stream-observe)</u>**
+Understand rich streaming updates with metadata and event types.
+
+**<u>[Tracing & Observability](/docs/Tracing%20and%20Observability)</u>**
+Combine async streaming with tracing for comprehensive monitoring.

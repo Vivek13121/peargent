@@ -2,6 +2,13 @@
 title: Overview
 description: About peargent.
 ---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Overview</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  About peargent.
+</h3>
 ![Alt text for the image](./assets/peargent.png)
 
 Peargent is a modern, simple, and powerful Python framework for building intelligent AI agents with production-grade features. It offers a clean, intuitive API for creating conversational agents that can use tools, maintain memory, collaborate with other agents, and scale reliably into production.
@@ -10,13 +17,13 @@ Peargent is a modern, simple, and powerful Python framework for building intelli
   <Card title="Quick start" href="/docs/quickstart">
     Learn how to set up your first agent in just a few lines of code.
   </Card>
-  <Card title="Examples" href="/link2">
+  <Card title="Examples" href="/docs/examples">
     Explore practical examples to understand Peargent's capabilities.
   </Card>
-  <Card title="Core concepts" href="/link3">
+  <Card title="Core concepts" href="/docs/agents">
     Dive into the fundamental concepts that power Peargent.
   </Card>
-  <Card title="Advanced Features" href="/link4">
+  <Card title="Advanced Features" href="/docs/advanced_features">
     Discover multi-agent orchestration, persistent memory, and observability.
   </Card>
 </Cards>
@@ -25,20 +32,20 @@ Peargent is a modern, simple, and powerful Python framework for building intelli
 
 Peargent simplifies the process of building AI agents by providing:
 
-- **Flexible LLM Support** — Works seamlessly with OpenAI, Groq, Google Gemini, and Azure OpenAI  
-- **Powerful Tool System** — Execute actions with built-in timeout, retries, and input/output validation  
-- **Persistent Memory** — Multiple backends supported: in-memory, file, Sqlite, PostgreSQL, Redis  
-- **Multi-Agent Orchestration** — Coordinate specialized agents for complex workflows  
-- **Production-Ready Observability** — Built-in tracing, cost tracking, and performance metrics  
-- **Type-Safe Structured Outputs** — Easily validate responses using Pydantic models  
+- **Flexible LLM Support** - Works seamlessly with OpenAI, Groq, Google Gemini, and Azure OpenAI  
+- **Powerful Tool System** - Execute actions with built-in timeout, retries, and input/output validation  
+- **Persistent Memory** - Multiple backends supported: in-memory, file, Sqlite, PostgreSQL, Redis  
+- **Multi-Agent Orchestration** - Coordinate specialized agents for complex workflows  
+- **Production-Ready Observability** - Built-in tracing, cost tracking, and performance metrics  
+- **Type-Safe Structured Outputs** - Easily validate responses using Pydantic models  
 
 ## How Does Peargent Work?
-Peargent lets you build individual agents or complex systems where each **<u>Agent</u>** contributes specialized work while sharing context through a global **<u>State</u>**. Agents operate inside a **<u>Pool</u>**, coordinated by a **<u>Router</u>** that can run in round-robin or LLM-based mode to decide which agent handles each step. Agents use **<u>Tools</u>** to take actions and update the shared State, while **<u>History</u>** persists reasoning and decisions to maintain continuity across the workflow.
+Peargent lets you build individual agents or complex systems where each **<u>[Agent](/docs/agents)</u>** contributes specialized work while sharing context through a global **<u>[State](/docs/states)</u>**. Agents operate inside a **<u>[Pool](/docs/pools)</u>**, coordinated by a **<u>[Router](/docs/routers)</u>** that can run in round-robin or LLM-based mode to decide which agent handles each step. Agents use **<u>[Tools](/docs/tools)</u>** to take actions and update the shared State, while **<u>[History](/docs/history)</u>** persists reasoning and decisions to maintain continuity across the workflow.
 
 ## Why Peargent?
 
   Start with a basic agent in just a few lines:
-```python tab="basic_agent.py"
+```python
   from peargent import create_agent
 
   agent = create_agent(
@@ -52,7 +59,7 @@ Peargent lets you build individual agents or complex systems where each **<u>Age
 
   Scale to complex multi-agent systems with memory, tools, and observability:
 
-```python tab="multi_agent.py"
+```python
   from peargent import create_agent, create_tool, create_pool
   from peargent.history import HistoryConfig, Sqlite
 

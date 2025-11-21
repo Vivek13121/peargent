@@ -1,0 +1,10 @@
+{
+  "title": "Streaming",
+  "description": "Stream agent responses in real-time for better user experience",
+  "icon": "Zap",
+  "pages": [
+    "index",
+    "stream-observe",
+    "async-streaming"
+  ]
+}

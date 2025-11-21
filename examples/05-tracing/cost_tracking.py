@@ -11,6 +11,7 @@ from peargent.models import groq
 # Enable tracing
 tracer = enable_tracing()
 
+
 # Create agent with Groq model
 agent = create_agent(
     name="CostTestAgent",

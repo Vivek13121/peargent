@@ -3,15 +3,22 @@ title: Tools
 description: Enable agents to perform actions beyond text generation with tools.
 ---
 
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Tools</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Enable agents to perform actions beyond text generation with tools.
+</h3>
+
 Tools are actions that agents can perform to interact with the real world. They allow agents to go beyond text generation by enabling operations such as querying databases, calling APIs, performing calculations, reading files, or executing any Python function you define.
 
 Think of tools as the **hands and eyes** of your agent, while the model provides the reasoning **(the brain)**. Tools give the agent the ability to actually act and produce real results. 
 
-When you create an **<u>agent</u>**, you pass in a list of available **<u>tools</u>**, and during execution the agent decides whether a tool is needed and invokes it automatically based on the model’s response.
+When you create an **<u>[Agent](/docs/agents)</u>**, you pass in a list of available **<u>[Tools](/docs/tools)</u>**, and during execution the agent decides whether a tool is needed and invokes it automatically based on the model’s response.
 
 ## Creating a Tool
 
-Use create_tool() to wrap a Python function into a tool that an agent can call. Every tool must define a `name`, `description`, `input_parameters`, and a `call_function`. The `call_function` is the underlying Python function that will be executed when the agent invokes the tool.
+Use `create_tool()` to wrap a Python function into a tool that an agent can call. Every tool must define a `name`, `description`, `input_parameters`, and a `call_function`. The `call_function` is the underlying Python function that will be executed when the agent invokes the tool.
 
 Below is a simple example tool that converts Celsius to Fahrenheit:
 

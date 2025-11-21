@@ -1,0 +1,496 @@
+---
+title: Stream Observe
+description: Rich streaming updates with metadata for production monitoring.
+---
+
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Stream Observe</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Rich streaming updates with metadata for production monitoring
+</h3>
+
+`stream_observe()` provides rich streaming updates with metadata like tokens, cost, duration, and event types. Perfect for production applications, dashboards, and monitoring.
+
+## Why Stream Observe?
+
+`stream()` only returns text chunks. `stream_observe()` returns structured updates with:
+
+* **Event Types** - Know when agents start, end, or emit tokens
+* **Cost Tracking** - Real-time token and cost information
+* **Performance Metrics** - Duration, latency, timing data
+* **Agent Context** - Which agent is running, metadata, status
+
+This makes it perfect for production monitoring, dashboards, and cost-aware applications.
+
+## Comparison: `stream()` vs `stream_observe()`
+
+### Using `stream()` (Simple)
+
+```python
+# Only text chunks
+for chunk in agent.stream("What is Python?"):
+    print(chunk, end="", flush=True)
+```
+
+**Pros:** Simple API
+**Cons:** No metadata, no events, no cost tracking
+
+### Using `stream_observe()` (Rich)
+
+```python
+# Rich updates with metadata
+for update in agent.stream_observe("What is Python?"):
+    if update.is_agent_start:
+        print(f"[START] {update.agent}")
+    elif update.is_token:
+        print(update.content, end="", flush=True)
+    elif update.is_agent_end:
+        print(f"\n[DONE] {update.tokens} tokens, ${update.cost:.6f}")
+```
+
+**Pros:** Rich metadata, event-based, cost tracking
+**Cons:** Slightly more complex
+
+## StreamUpdate Object
+
+Every update from `stream_observe()` is a `StreamUpdate` object:
+
+```python
+from peargent.core.streaming import StreamUpdate, UpdateType
+
+update = StreamUpdate(
+    type=UpdateType.TOKEN,           # Update type
+    content="Hello",                 # Text content (for TOKEN)
+    agent="MyAgent",                 # Agent name
+    metadata={"tokens": 50, "cost": 0.0001}  # Additional metadata
+)
+```
+
+### Update Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `UpdateType` | Type of update (AGENT_START, TOKEN, AGENT_END, etc.) |
+| `content` | `str` | Text content (for TOKEN updates) |
+| `agent` | `str` | Agent name |
+| `metadata` | `dict` | Additional metadata (tokens, cost, duration, etc.) |
+
+### Helper Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `update.is_token` | `bool` | Check if this is a token update |
+| `update.is_agent_start` | `bool` | Check if this is an agent start event |
+| `update.is_agent_end` | `bool` | Check if this is an agent end event |
+| `update.tokens` | `int` | Token count (from metadata) |
+| `update.cost` | `float` | Cost in USD (from metadata) |
+| `update.duration` | `float` | Duration in seconds (from metadata) |
+
+### Update Types
+
+```python
+from peargent.core.streaming import UpdateType
+
+UpdateType.AGENT_START   # Agent begins execution
+UpdateType.TOKEN         # LLM generates a token
+UpdateType.AGENT_END     # Agent finishes execution
+UpdateType.POOL_START    # Pool begins execution
+UpdateType.POOL_END      # Pool finishes execution
+UpdateType.TOOL_START    # Tool begins execution
+UpdateType.TOOL_END      # Tool finishes execution
+UpdateType.ERROR         # Error occurred
+```
+
+## Basic Example
+
+```python
+from peargent import create_agent
+from peargent.models import groq
+
+agent = create_agent(
+    name="ObservableAgent",
+    description="Agent with observable execution",
+    persona="You are helpful and concise.",
+    model=groq("llama-3.3-70b-versatile")
+)
+
+for update in agent.stream_observe("What is Python?"):
+    if update.is_agent_start:
+        print(f"[START] {update.agent} starting...")
+
+    elif update.is_token:
+        print(update.content, end="", flush=True)
+
+    elif update.is_agent_end:
+        print(f"\n[DONE] {update.agent} finished!")
+        print(f"  Tokens: {update.tokens}")
+        print(f"  Cost: ${update.cost:.6f}")
+        print(f"  Duration: {update.duration:.2f}s")
+```
+
+Output:
+```
+[START] ObservableAgent starting...
+Python is a high-level programming language known for its simple syntax
+and versatility.
+[DONE] ObservableAgent finished!
+  Tokens: 127
+  Cost: $0.000082
+  Duration: 1.23s
+```
+
+## Real-Time Cost Tracking
+
+Track costs as they accumulate:
+
+```python
+from peargent.telemetry import enable_tracing
+
+tracer = enable_tracing()
+
+agent = create_agent(
+    name="CostTracker",
+    description="Cost tracking agent",
+    persona="You are helpful",
+    model=groq("llama-3.3-70b-versatile"),
+    tracing=True
+)
+
+total_cost = 0.0
+total_tokens = 0
+
+queries = [
+    "What is 2+2?",
+    "What is the capital of France?",
+    "What is machine learning?"
+]
+
+for query in queries:
+    print(f"\nQuery: {query}")
+    print("Response: ", end="", flush=True)
+
+    for update in agent.stream_observe(query):
+        if update.is_token:
+            print(update.content, end="", flush=True)
+
+        elif update.is_agent_end:
+            total_cost += update.cost or 0.0
+            total_tokens += update.tokens or 0
+
+            print(f"\n  This query: {update.tokens} tokens, ${update.cost:.6f}")
+
+print(f"\n\nTotal: {total_tokens} tokens, ${total_cost:.6f}")
+```
+
+Output:
+```
+Query: What is 2+2?
+Response: 2+2 equals 4.
+  This query: 45 tokens, $0.000029
+
+Query: What is the capital of France?
+Response: The capital of France is Paris.
+  This query: 52 tokens, $0.000034
+
+Query: What is machine learning?
+Response: Machine learning is...
+  This query: 234 tokens, $0.000152
+
+Total: 331 tokens, $0.000215
+```
+
+## Progress Indicators
+
+Show progress to users:
+
+```python
+import sys
+
+for update in agent.stream_observe("Explain quantum computing"):
+    if update.is_agent_start:
+        sys.stdout.write("🤖 Generating response")
+        sys.stdout.flush()
+
+    elif update.is_token:
+        # Print a dot every 10 characters
+        if len(update.content) > 0:
+            sys.stdout.write(".")
+            sys.stdout.flush()
+
+    elif update.is_agent_end:
+        print(f" ✓ Done!")
+        print(f"Generated {update.tokens} tokens in {update.duration:.1f}s")
+```
+
+Output:
+```
+🤖 Generating response......... ✓ Done!
+Generated 234 tokens in 2.3s
+```
+
+## Dashboard-Style Display
+
+Create rich dashboards with real-time updates:
+
+```python
+from datetime import datetime
+
+def format_timestamp():
+    return datetime.now().strftime("%H:%M:%S")
+
+for update in agent.stream_observe("Explain AI"):
+    if update.is_agent_start:
+        print("="*60)
+        print(f"[{format_timestamp()}] Agent: {update.agent}")
+        print(f"[{format_timestamp()}] Input: {update.metadata.get('input', 'N/A')[:40]}...")
+        print("-"*60)
+
+    elif update.is_token:
+        print(update.content, end="", flush=True)
+
+    elif update.is_agent_end:
+        print(f"\n{'-'*60}")
+        print(f"[{format_timestamp()}] Status: Completed")
+        print(f"[{format_timestamp()}] Tokens: {update.tokens}")
+        print(f"[{format_timestamp()}] Cost: ${update.cost:.6f}")
+        print(f"[{format_timestamp()}] Duration: {update.duration:.2f}s")
+        print("="*60)
+```
+
+Output:
+```
+============================================================
+[14:32:15] Agent: ObservableAgent
+[14:32:15] Input: Explain AI...
+------------------------------------------------------------
+Artificial intelligence (AI) is...
+------------------------------------------------------------
+[14:32:17] Status: Completed
+[14:32:17] Tokens: 156
+[14:32:17] Cost: $0.000101
+[14:32:17] Duration: 1.85s
+============================================================
+```
+
+## Collecting Full Response
+
+Save the complete response while tracking metadata:
+
+```python
+response_text = ""
+metadata = {}
+
+for update in agent.stream_observe("What is Python?"):
+    if update.is_agent_start:
+        print(f"Starting {update.agent}...")
+
+    elif update.is_token:
+        response_text += update.content
+        print(update.content, end="", flush=True)
+
+    elif update.is_agent_end:
+        metadata = {
+            "tokens": update.tokens,
+            "cost": update.cost,
+            "duration": update.duration,
+            "agent": update.agent
+        }
+
+# Use complete response and metadata
+print(f"\n\nComplete response: {response_text}")
+print(f"Metadata: {metadata}")
+```
+
+## Streaming with Pools
+
+`stream_observe()` works with pools to track multi-agent execution:
+
+```python
+from peargent import create_pool
+
+pool = create_pool(
+    agents=[researcher, writer, reviewer],
+    router=my_router,
+    max_iter=3
+)
+
+for update in pool.stream_observe("Research AI and write a summary"):
+    if update.type == UpdateType.POOL_START:
+        print("[POOL START]")
+
+    elif update.is_agent_start:
+        print(f"\n[{update.agent}] ", end="", flush=True)
+
+    elif update.is_token:
+        print(update.content, end="", flush=True)
+
+    elif update.is_agent_end:
+        print(f"\n[{update.agent} DONE] {update.tokens} tokens, ${update.cost:.6f}")
+
+    elif update.type == UpdateType.POOL_END:
+        total_tokens = update.metadata.get('total_tokens', 0)
+        total_cost = update.metadata.get('total_cost', 0)
+        print(f"\n[POOL END] Total: {total_tokens} tokens, ${total_cost:.6f}")
+```
+
+## Error Handling
+
+Handle errors gracefully with `stream_observe()`:
+
+```python
+from peargent.core.streaming import UpdateType
+
+try:
+    for update in agent.stream_observe("Query that might fail"):
+        if update.type == UpdateType.ERROR:
+            print(f"\n❌ Error: {update.metadata.get('error')}")
+            break
+
+        elif update.is_token:
+            print(update.content, end="", flush=True)
+
+        elif update.is_agent_end:
+            print(f"\n✓ Success: {update.tokens} tokens")
+
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+## Accessing Metadata
+
+Full metadata is available in `update.metadata`:
+
+```python
+for update in agent.stream_observe("query"):
+    if update.is_agent_end:
+        print("Metadata:")
+        for key, value in update.metadata.items():
+            print(f"  {key}: {value}")
+```
+
+Common metadata keys:
+- `input` - Original input query
+- `tokens` - Total tokens used
+- `cost` - Total cost in USD
+- `duration` - Execution duration in seconds
+- `model` - Model name used
+- `prompt_tokens` - Prompt tokens
+- `completion_tokens` - Completion tokens
+
+## Best Practices
+
+### 1. Always Check Update Type
+
+Always check the update type before accessing properties:
+
+```python
+for update in agent.stream_observe("query"):
+    if update.is_agent_start:
+        # Safe to access update.agent
+        print(f"Starting {update.agent}")
+
+    elif update.is_token:
+        # Safe to access update.content
+        print(update.content, end="")
+
+    elif update.is_agent_end:
+        # Safe to access update.tokens, update.cost
+        print(f"Done: {update.tokens} tokens")
+```
+
+### 2. Use Helper Properties
+
+Use helper properties instead of checking `update.type` directly:
+
+```python
+# Good ✓
+if update.is_agent_start:
+    ...
+
+# Also works, but more verbose
+if update.type == UpdateType.AGENT_START:
+    ...
+```
+
+### 3. Handle None Values
+
+Metadata values may be `None` - handle gracefully:
+
+```python
+for update in agent.stream_observe("query"):
+    if update.is_agent_end:
+        tokens = update.tokens or 0
+        cost = update.cost or 0.0
+        duration = update.duration or 0.0
+
+        print(f"Tokens: {tokens}, Cost: ${cost:.6f}, Duration: {duration:.2f}s")
+```
+
+### 4. Flush Output for Real-Time Display
+
+Always flush output for real-time streaming:
+
+```python
+for update in agent.stream_observe("query"):
+    if update.is_token:
+        print(update.content, end="", flush=True)  # ← flush=True
+```
+
+## Common Use Cases
+
+### 1. Real-Time Chat with Stats
+
+```python
+while True:
+    user_input = input("You: ")
+    if user_input.lower() in ["exit", "quit"]:
+        break
+
+    print("Bot: ", end="", flush=True)
+
+    for update in agent.stream_observe(user_input):
+        if update.is_token:
+            print(update.content, end="", flush=True)
+        elif update.is_agent_end:
+            print(f" ({update.tokens} tokens, ${update.cost:.6f})")
+```
+
+### 2. Budget Monitoring
+
+```python
+BUDGET_LIMIT = 0.10  # $0.10
+
+session_cost = 0.0
+
+for update in agent.stream_observe("query"):
+    if update.is_agent_end:
+        session_cost += update.cost or 0.0
+
+        if session_cost > BUDGET_LIMIT:
+            print(f"\n⚠️ Budget exceeded: ${session_cost:.6f}")
+            break
+```
+
+### 3. Logging Execution
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+for update in agent.stream_observe("query"):
+    if update.is_agent_start:
+        logger.info(f"Agent {update.agent} started")
+
+    elif update.is_agent_end:
+        logger.info(f"Agent {update.agent} completed: {update.tokens} tokens, ${update.cost:.6f}")
+```
+
+## What's Next?
+
+**<u>[Async Streaming](/docs/Streaming/async-streaming)</u>**
+Learn about async streaming with `astream_observe()` for concurrent execution and web servers.
+
+**<u>[Tracing & Observability](/docs/Tracing%20and%20Observability)</u>**
+Combine streaming with tracing for comprehensive monitoring and cost tracking.

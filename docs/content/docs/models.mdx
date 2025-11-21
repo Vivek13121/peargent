@@ -3,9 +3,16 @@ title: Models
 description: Use different model providers in your Agents and Pools.
 ---
 
-Models define which LLM your **<u>Agent</u>** or **<u>Pool</u>** uses. Peargent provides a simple, unified interface for connecting to different providers (OpenAI, Groq, Gemini, etc.).
+<h1 className="mt-4 text-3xl font-medium">
+  <span className="text-primary">Models</span>
+</h1>
+<h3 className="-mt-7 text-lg font-normal text-muted-foreground">
+  Use different model providers in your Agents and Pools.
+</h3>
 
-Think of a Model as the brain of your **<u>Agent</u>** or **<u>Pool</u>**, the thing that actually generates responses.
+Models define which LLM your **<u>[Agent](/docs/agents)</u>** or **<u>[Pool](/docs/pools)</u>** uses. Peargent provides a simple, unified interface for connecting to different providers (OpenAI, Groq, Gemini, etc.).
+
+Think of a Model as the brain of your **<u>[Agent](/docs/agents)</u>** or **<u>[Pool](/docs/pools)</u>**, the thing that actually generates responses.
 
 ## Creating a Model
 Models are imported from peargent.models and created using simple factory functions:
