@@ -12,9 +12,9 @@ from typing import Optional, Dict, List, Any, Type, Union
 
 from jinja2 import Environment, FileSystemLoader
 from peargent.core.stopping import limit_steps
-from peargent.core.history import ConversationHistory
-from peargent.telemetry.cost_tracker import get_cost_tracker
-from peargent.telemetry import get_tracer, SpanType
+from peargent.history import ConversationHistory
+from peargent.observability.cost_tracker import get_cost_tracker
+from peargent.observability import get_tracer, SpanType
 
 
 class Agent:
@@ -316,7 +316,7 @@ class Agent:
         tracer = get_tracer() if self.tracing else None
         if tracer and tracer.enabled:
             # Get session and user context if available
-            from peargent.telemetry import get_session_id, get_user_id
+            from peargent.observability import get_session_id, get_user_id
             session_id = get_session_id()
             user_id = get_user_id()
             trace_id = tracer.start_trace(
@@ -579,7 +579,7 @@ class Agent:
         trace = None
         tracer = get_tracer() if self.tracing else None
         if tracer and tracer.enabled:
-            from peargent.telemetry import get_session_id, get_user_id
+            from peargent.observability import get_session_id, get_user_id
             session_id = get_session_id()
             user_id = get_user_id()
 
@@ -721,7 +721,7 @@ class Agent:
         trace = None
         tracer = get_tracer() if self.tracing else None
         if tracer and tracer.enabled:
-            from peargent.telemetry import get_session_id, get_user_id
+            from peargent.observability import get_session_id, get_user_id
             session_id = get_session_id()
             user_id = get_user_id()
 

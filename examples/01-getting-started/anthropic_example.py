@@ -40,7 +40,7 @@ def compare_models_example():
     models = {
         "Claude (Anthropic)": anthropic("claude-3-5-sonnet-20241022"),
         "GPT-4o Mini (OpenAI)": openai("gpt-4o-mini"),
-        "Gemini Flash": gemini("gemini-2.5-flash")
+        "Gemini Flash": gemini(model="gemini-2.5-flash")
     }
     
     results = {}

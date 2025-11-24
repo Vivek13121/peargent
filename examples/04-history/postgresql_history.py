@@ -17,7 +17,8 @@ Note: Uses SQLAlchemy for secure, parameterized queries (SQL injection protectio
 """
 
 import os
-from peargent import create_agent, create_history, create_tool, Postgresql, Redis, HistoryConfig
+from peargent import create_agent, create_history, create_tool, HistoryConfig
+from peargent.storage import Postgresql, Redis
 from peargent.models import groq
 
 # PostgreSQL connection configuration

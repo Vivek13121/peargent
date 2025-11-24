@@ -18,7 +18,7 @@ import os
 
 from peargent import create_agent, create_tool
 from peargent.models import groq
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 
 
 def data_analyzer_func(operation: str, data: str) -> str:

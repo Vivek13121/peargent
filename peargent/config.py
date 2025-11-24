@@ -5,7 +5,8 @@ This module provides configuration classes for agents and history management.
 """
 
 from typing import Optional, Union, Any
-from peargent.core.history import ConversationHistory, StorageType, InMemory, HistoryStore
+from peargent.history import ConversationHistory, HistoryStore
+from peargent.storage import StorageType, InMemory
 
 
 class HistoryConfig:

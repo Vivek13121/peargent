@@ -20,8 +20,9 @@ import time
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from peargent import create_agent, create_pool, create_tool, create_history, File, HistoryConfig
-from peargent.telemetry import enable_tracing
+from peargent import create_agent, create_pool, create_tool, create_history, HistoryConfig
+from peargent.storage import File
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 # Load environment variables
@@ -230,7 +231,7 @@ print("✓ History management test passed!")
 print("\n[TEST 7] Cost Tracking")
 print("-" * 80)
 
-from peargent.telemetry import get_cost_tracker
+from peargent.observability import get_cost_tracker
 
 # Create agent with tracing for cost tracking
 cost_agent = create_agent(

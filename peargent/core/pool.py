@@ -10,7 +10,7 @@ from .state import State
 from .router import RouterFn, RouterResult
 
 if TYPE_CHECKING:
-    from peargent.core.history import ConversationHistory
+    from peargent.history import ConversationHistory
 
 
 class Pool:

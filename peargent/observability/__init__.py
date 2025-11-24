@@ -7,7 +7,7 @@ This module provides comprehensive tracing capabilities for agent operations,
 including timing, cost tracking, and detailed execution logs.
 
 Usage:
-    from peargent.telemetry import configure_tracing, get_tracer
+    from peargent.observability import configure_tracing, get_tracer
 
     # Configure tracing
     configure_tracing(enabled=True)
@@ -30,6 +30,14 @@ from .store import (
     InMemoryTracingStore,
     FileTracingStore,
 )
+
+# Redis storage (optional)
+try:
+    from .redis_store import RedisTracingStore
+    __all_redis__ = ['RedisTracingStore']
+except ImportError:
+    RedisTracingStore = None
+    __all_redis__ = []
 
 # Cost tracking
 from .cost_tracker import (
@@ -95,4 +103,4 @@ __all__ = [
     "JSONFormatter",
     "MarkdownFormatter",
     "format_trace",
-]
+] + __all_redis__

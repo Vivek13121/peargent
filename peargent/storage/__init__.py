@@ -1,21 +1,26 @@
 """
-History module for peargent.
+Unified storage module for Peargent.
 
-Provides conversation history management with multiple storage backends.
+Provides storage type configurations and implementations that work across history and tracing.
+All storage types and stores can be imported from this single module.
 """
 
-# Export base classes
+# Storage type configuration classes
+from .storage_types import (
+    StorageType,
+    InMemory,
+    File,
+    Sqlite,
+    Postgresql,
+    Redis,
+)
+
+# Base classes for storage implementations
 from .base import Message, Thread, HistoryStore, FunctionalHistoryStore
 
-# Export concrete implementations
+# Concrete storage implementations
 from .session_buffer import InMemoryHistoryStore
 from .file import FileHistoryStore
-
-# Export storage type configuration classes
-from .storage_types import StorageType, InMemory, File, Sqlite, Postgresql, Redis
-
-# Export high-level interface
-from .history import ConversationHistory
 
 # Try to export SQL-based stores
 try:
@@ -40,17 +45,19 @@ except ImportError:
     __all_redis__ = []
 
 __all__ = [
-    'Message',
-    'Thread',
-    'HistoryStore',
-    'FunctionalHistoryStore',
-    'InMemoryHistoryStore',
-    'FileHistoryStore',
-    'ConversationHistory',
+    # Storage type configurations
     'StorageType',
     'InMemory',
     'File',
     'Sqlite',
     'Postgresql',
     'Redis',
+    # Base classes
+    'Message',
+    'Thread',
+    'HistoryStore',
+    'FunctionalHistoryStore',
+    # Concrete implementations
+    'InMemoryHistoryStore',
+    'FileHistoryStore',
 ] + __all_sql__ + __all_redis__

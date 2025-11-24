@@ -6,7 +6,7 @@ Demonstrates rich streaming updates with metadata like tokens, cost, and timing.
 
 import sys
 from peargent import create_agent
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 # Enable tracing

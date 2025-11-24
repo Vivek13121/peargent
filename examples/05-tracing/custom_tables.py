@@ -7,7 +7,7 @@ in the same database, or when you need to follow specific naming conventions.
 """
 
 from peargent import create_agent, create_tool
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 

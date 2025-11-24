@@ -1,9 +1,7 @@
 {
   "title": "Streaming",
-  "description": "Stream agent responses in real-time for better user experience",
-  "icon": "Zap",
+  "description": "Stream agent responses in real-time.",
   "pages": [
-    "index",
     "stream-observe",
     "async-streaming"
   ]

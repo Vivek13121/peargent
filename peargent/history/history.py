@@ -4,22 +4,22 @@ High-level interface for managing conversation history.
 
 import json
 from typing import Dict, List, Optional, Any
-from .base import HistoryStore, Thread, Message
+from peargent.storage import HistoryStore, Thread, Message
 
 # Import concrete implementations
-from .file import FileHistoryStore
-from .session_buffer import InMemoryHistoryStore
+from peargent.storage import FileHistoryStore
+from peargent.storage import InMemoryHistoryStore
 
 # Try to import SQL-based stores
 try:
-    from .postgresql import PostgreSQLHistoryStore
+    from peargent.storage import PostgreSQLHistoryStore
     POSTGRESQL_AVAILABLE = True
 except ImportError:
     PostgreSQLHistoryStore = None
     POSTGRESQL_AVAILABLE = False
 
 try:
-    from .sqlite import SQLiteHistoryStore
+    from peargent.storage import SQLiteHistoryStore
     SQLITE_AVAILABLE = True
 except ImportError:
     SQLiteHistoryStore = None

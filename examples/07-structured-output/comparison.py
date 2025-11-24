@@ -7,7 +7,7 @@ Shows the difference between agents with and without structured output.
 import json
 from pydantic import BaseModel, Field
 from peargent import create_agent
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 # Define structured output schema

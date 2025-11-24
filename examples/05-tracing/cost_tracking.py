@@ -5,7 +5,7 @@ This tests that costs are being calculated correctly for different models.
 """
 
 from peargent import create_agent
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 # Enable tracing

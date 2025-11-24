@@ -61,7 +61,8 @@ Peargent lets you build individual agents or complex systems where each **<u>[Ag
 
 ```python
   from peargent import create_agent, create_tool, create_pool
-  from peargent.history import HistoryConfig, Sqlite
+  from peargent.history import HistoryConfig
+  from peargent.storage import Sqlite
 
   # Create specialized agents with persistent memory
   researcher = create_agent(

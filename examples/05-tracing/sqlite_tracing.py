@@ -6,7 +6,7 @@ SQLite is perfect for development and smaller projects as it requires no server 
 """
 
 from peargent import create_agent, create_tool
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 

@@ -1,38 +1,34 @@
 """
-Peargent History Module
+History module for peargent.
 
-Provides a unified interface for conversation history and storage backends.
-All history-related imports can be accessed from this module.
+Provides conversation history management with multiple storage backends.
 """
 
-# Import HistoryConfig from the config module
-from ..config.history import HistoryConfig
-
-# Import storage types from core.history
-from ..core.history import (
-    InMemory,
-    File,
-    Sqlite,
-    Postgresql,
-    Redis,
-    StorageType,
-    ConversationHistory,
-    HistoryStore,
-    Thread,
+# Import base classes and storage implementations from peargent.storage
+from peargent.storage import (
     Message,
+    Thread,
+    HistoryStore,
+    FunctionalHistoryStore,
+    InMemoryHistoryStore,
+    FileHistoryStore,
+    PostgreSQLHistoryStore,
+    SQLiteHistoryStore,
+    RedisHistoryStore,
 )
 
-# Define what gets exported from this module
+# Export high-level interface
+from .history import ConversationHistory
+
 __all__ = [
-    'HistoryConfig',
-    'InMemory',
-    'File',
-    'Sqlite',
-    'Postgresql',
-    'Redis',
-    'StorageType',
-    'ConversationHistory',
-    'HistoryStore',
-    'Thread',
     'Message',
+    'Thread',
+    'HistoryStore',
+    'FunctionalHistoryStore',
+    'InMemoryHistoryStore',
+    'FileHistoryStore',
+    'PostgreSQLHistoryStore',
+    'SQLiteHistoryStore',
+    'RedisHistoryStore',
+    'ConversationHistory',
 ]

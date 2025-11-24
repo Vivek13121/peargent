@@ -17,24 +17,22 @@ Tracing gives you complete visibility into what your agents are doing. Track LLM
 ## Why Tracing?
 
 Production AI applications need observability:
-
 * **Cost Control** - Track token usage and API costs per request
 * **Performance Monitoring** - Measure latency and identify bottlenecks
 * **Debugging** - See exactly what happened when something fails
 * **Usage Analytics** - Understand how agents and tools are being used
-* **Optimization** - Identify expensive operations and optimize them
 
 ## Quick Start
 
 Enable tracing in one line:
 
 ```python
-from peargent import create_agent
-from peargent.telemetry import enable_tracing
-from peargent.models import openai
+from peargent import create_agent 
+from peargent.observability import enable_tracing 
+from peargent.models import openai 
 
 # Enable tracing
-tracer = enable_tracing()
+tracer = enable_tracing() # [!code highlight]
 
 # Create agent with tracing enabled
 agent = create_agent(
@@ -42,34 +40,22 @@ agent = create_agent(
     description="Helpful assistant",
     persona="You are helpful",
     model=openai("gpt-4o"),
-    tracing=True  # Enable tracing for this agent
+    tracing=True
 )
 
 # Run agent - traces are automatically captured
 result = agent.run("What is 2+2?")
 
 # View traces
-traces = tracer.list_traces()
-print(f"Captured {len(traces)} traces")
-
-# Print formatted traces
-tracer.print_traces(limit=5, format="terminal")
-
-# Print summary with costs
 tracer.print_summary()
 ```
 
 **Output:**
-```
-Captured 1 traces
-
-================================================================================
+```text
 TRACE SUMMARY
-================================================================================
 Total Traces: 1
-Total Tokens: 127 (prompt: 89, completion: 38)
+Total Tokens: 127
 Total Cost: $0.000082
-Average Cost per Trace: $0.000082
 ```
 
 ## What Gets Traced?
@@ -77,74 +63,36 @@ Average Cost per Trace: $0.000082
 Every agent execution creates a **Trace** containing multiple **Spans**:
 
 ### **Trace**
-Represents a full agent execution from beginning to end.
-Includes:
-
-* ID – Unique trace identifier
-* Agent – Which agent ran
-* Tokens & Cost – Total usage and API cost
-* Duration – Total time taken
-* Spans – Steps that happened inside the trace
+Represents a full agent execution. Includes:
+* **ID** – Unique identifier
+* **Agent** – Which agent ran
+* **Tokens & Cost** – Total usage and API cost
+* **Duration** – Total time taken
 
 ### **Spans**
-A single operation inside a trace.
-Types include:
-
-* LLM Call – Model, tokens, cost, latency
-* Tool Execution – Tool name, inputs, outputs, duration
-* Agent Logic – Reasoning or decision steps
+Individual operations inside a trace:
+* **LLM Call** – Model, tokens, cost, latency
+* **Tool Execution** – Tool name, inputs, outputs, duration
+* **Agent Logic** – Reasoning steps
 
 ## Storage Options
 
-Peargent supports multiple storage backends:
+Peargent supports multiple storage backends including **In-Memory** (default), **SQLite**, **PostgreSQL**, **Redis**, and **File-based**.
 
-```python
-# In-memory (default) - fast, no persistence
-tracer = enable_tracing() #Development & debugging
-
-# SQLite - local database
-tracer = enable_tracing(
-    store_type="sqlite",
-    connection_string="sqlite:///./traces.db"
-) # Local apps, single-server
-
-# PostgreSQL - production-grade
-tracer = enable_tracing(
-    store_type="postgres",
-    connection_string="postgresql://user:pass@localhost/dbname"
-) # Production, multi-instance
-```
-
-See **<u>[Database Storage](/docs/Tracing%20and%20Observability/database-storage)</u>** for detailed setup.
+See **<u>[Tracing Storage](/docs/Tracing%20and%20Observability/tracing-storage)</u>** for detailed setup and configuration.
 
 ## Viewing Traces
 
-List all traces:
+List all traces or print a summary:
 
 ```python
-traces = tracer.list_traces()
-
+# List traces
+traces = tracer.list_traces() # [!code highlight]
 for trace in traces:
-    print(f"Trace {trace.id}: {trace.agent_name}")
-    print(f"  Tokens: {trace.total_tokens}")
-    print(f"  Cost: ${trace.total_cost:.6f}")
-```
+    print(f"Trace {trace.id}: {trace.total_cost:.6f}")
 
-Print summary:
-
-```python
-tracer.print_summary()
-```
-
-Output:
-```
-================================================================================
-TRACE SUMMARY
-================================================================================
-Total Traces: 25
-Total Tokens: 12,456 (prompt: 7,234, completion: 5,222)
-Total Cost: $0.008123
-Average Cost per Trace: $0.000325
+# Print summary
+tracer.print_summary() # [!code highlight]
 ```
 
 ## What's Next?
@@ -152,5 +100,5 @@ Average Cost per Trace: $0.000325
 **<u>[Cost Tracking](/docs/Tracing%20and%20Observability/cost-tracking)</u>**
 Learn about model pricing, cost calculation, and optimization strategies.
 
-**<u>[Database Storage](/docs/Tracing%20and%20Observability/database-storage)</u>**
-Set up SQLite or PostgreSQL for persistent trace storage with custom table names.
+**<u>[Tracing Storage](/docs/Tracing%20and%20Observability/tracing-storage)</u>**
+Set up SQLite, PostgreSQL, or Redis for persistent trace storage.

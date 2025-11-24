@@ -7,7 +7,8 @@ Provides HistoryConfig class for configuring conversation history management.
 from typing import Optional, Union, Literal
 from dataclasses import dataclass
 
-from peargent.core.history import ConversationHistory, StorageType
+from peargent.history import ConversationHistory
+from peargent.storage import StorageType
 
 
 @dataclass

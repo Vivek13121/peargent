@@ -10,377 +10,77 @@ description: Stream agent responses in real-time for better user experience.
   Stream agent responses in real-time for better user experience
 </h3>
 
-Streaming provides real-time text output as the LLM generates responses, creating a much better user experience compared to waiting for the entire response to complete.
-
-## Why Streaming?
-
-Without streaming, users wait for the entire LLM response to complete before seeing any output. With streaming, they see tokens appear in real-time:
-
-**Without Streaming:**
-```
-User: "What is Python?"
-[... 2-3 second wait ...]
-Agent: "Python is a high-level programming language..."
-```
-
-**With Streaming:**
-```
-User: "What is Python?"
-Agent: "Python" ← appears immediately
-Agent: " is a high" ← appears
-Agent: "-level programming" ← appears
-Agent: " language..." ← continues
-```
-
-**Benefits:**
-* **Lower Perceived Latency** - Users see results immediately
-* **Better UX** - Feels more responsive and interactive
-* **Engagement** - Users stay engaged during generation
-* **Production Standard** - Expected in modern AI applications
+Streaming allows you to display the agent's response token by token as it's being generated, rather than waiting for the entire response to complete. This creates a much more responsive and engaging user experience.
 
 ## Quick Start
 
-Stream agent responses using `agent.stream()`:
+Use the `stream()` method to get an iterator that yields text chunks as they arrive.
 
 ```python
 from peargent import create_agent
-from peargent.models import groq
+from peargent.models import openai
 
 agent = create_agent(
     name="StreamingAgent",
     description="An agent that streams responses",
     persona="You are helpful and concise.",
-    model=groq("llama-3.3-70b-versatile")
+    model=openai("gpt-4o")
 )
 
 # Stream response token by token
-for chunk in agent.stream("What is Python in 2 sentences?"):
+print("Agent: ", end="", flush=True)
+
+for chunk in agent.stream("What is Python in one sentence?"):
     print(chunk, end="", flush=True)
 ```
 
-Output (appears progressively):
-```
-Python is a high-level programming language known for its simple syntax
-and versatility. It's widely used for web development, data science,
-automation, and more.
+**Output:**
+```text
+Agent: Python is a high-level, interpreted programming language known for its readability and versatility.
 ```
 
-## Streaming Methods
+## Why Use Streaming?
 
-Peargent provides two streaming methods:
+*   **Lower Latency**: Users see the first words immediately, instead of waiting seconds for the full answer.
+*   **Better UX**: The application feels alive and responsive.
+*   **Engagement**: Users can start reading while the rest of the answer is being generated.
 
-| Method | Returns | Use Case |
-|--------|---------|----------|
-| **`agent.stream()`** | Text chunks only | Simple chatbots, basic streaming |
-| **`agent.stream_observe()`** | Rich updates with metadata | Production apps, dashboards, cost tracking |
+## When to Use `stream()`
 
-### `stream()` - Simple Text Streaming
+Use `agent.stream()` when you just need the **text content** of the response.
 
-Returns only text chunks:
+*   ✅ Chatbots and conversational interfaces
+*   ✅ CLI tools requiring real-time feedback
+*   ✅ Simple text generation tasks
 
-```python
-# Basic streaming
-for chunk in agent.stream("What is machine learning?"):
-    print(chunk, end="", flush=True)
-```
-
-**Pros:**
-- Simple API
-- Easy to use
-- Perfect for basic chatbots
-
-**Cons:**
-- No metadata (tokens, cost, duration)
-- No start/end events
-- Limited for production monitoring
-
-### `stream_observe()` - Rich Streaming with Metadata
-
-Returns structured updates with metadata. See **<u>[Stream Observe](/docs/Streaming/stream-observe)</u>** for details.
-
-```python
-for update in agent.stream_observe("What is AI?"):
-    if update.is_agent_start:
-        print(f"[START] {update.agent}")
-    elif update.is_token:
-        print(update.content, end="", flush=True)
-    elif update.is_agent_end:
-        print(f"\n[DONE] {update.tokens} tokens, ${update.cost:.6f}")
-```
-
-**Pros:**
-- Rich metadata (tokens, cost, duration)
-- Event-based (start, token, end)
-- Perfect for dashboards and monitoring
-- Real-time cost tracking
-
-**Cons:**
-- Slightly more complex API
-- Requires handling different update types
-
-## Streaming with Tools
-
-Streaming works seamlessly with tool-using agents:
-
-```python
-from peargent import create_agent, create_tool
-from peargent.models import groq
-
-def calculator_func(operation: str, a: float, b: float) -> float:
-    operations = {
-        "add": lambda x, y: x + y,
-        "multiply": lambda x, y: x * y
-    }
-    return operations.get(operation, lambda x, y: 0)(a, b)
-
-calculator = create_tool(
-    name="calculator",
-    description="Performs arithmetic operations",
-    input_parameters={"operation": str, "a": float, "b": float},
-    call_function=calculator_func
-)
-
-agent = create_agent(
-    name="MathAgent",
-    description="Math assistant",
-    persona="You are a math expert. Use the calculator tool.",
-    model=groq("llama-3.3-70b-versatile"),
-    tools=[calculator]
-)
-
-# Stream response with tool usage
-for chunk in agent.stream("What is 15 + 27?"):
-    print(chunk, end="", flush=True)
-```
-
-Output (appears progressively):
-```
-Let me calculate that for you. 15 + 27 equals 42.
-```
-
-The tool execution happens automatically, and the final response streams to the user.
+If you need metadata like **token usage**, **costs**, or **execution time**, use **<u>[Stream Observe](/docs/Streaming/stream-observe)</u>** instead.
 
 ## Streaming with Pools
 
-Pools support streaming across multiple agents:
+You can also stream responses from a **Pool** of agents. The pool will stream the output of whichever agent is currently executing.
 
 ```python
 from peargent import create_pool
 
 pool = create_pool(
-    agents=[researcher, writer, reviewer],
-    router=my_router,
-    max_iter=3
+    agents=[researcher, writer],
+    router=my_router
 )
 
-# Stream pool execution
+# Stream the entire multi-agent interaction
 for chunk in pool.stream("Research AI and write a summary"):
     print(chunk, end="", flush=True)
 ```
 
-Each agent's output streams as it executes, creating a seamless multi-agent experience.
-
-## Streaming with Tracing
-
-Streaming works automatically with tracing:
-
-```python
-from peargent.telemetry import enable_tracing
-
-tracer = enable_tracing()
-
-agent = create_agent(
-    name="TracedAgent",
-    description="Agent with tracing",
-    persona="You are helpful",
-    model=groq("llama-3.3-70b-versatile"),
-    tracing=True  # Enable tracing
-)
-
-# Stream and trace
-for chunk in agent.stream("What is Python?"):
-    print(chunk, end="", flush=True)
-
-# Get trace information after streaming
-traces = tracer.list_traces()
-trace = traces[0]
-
-print(f"\n\nTrace: {trace.total_tokens} tokens, ${trace.total_cost:.6f}")
-```
-
-Traces are captured in the background while streaming occurs.
-
 ## Best Practices
 
-### 1. Always Flush Output
-
-Use `flush=True` to ensure chunks appear immediately:
-
-```python
-for chunk in agent.stream("query"):
-    print(chunk, end="", flush=True)  # ← flush=True is critical
-```
-
-Without `flush=True`, chunks may be buffered and appear in batches.
-
-### 2. Handle Empty Chunks
-
-Some chunks may be empty - handle them gracefully:
-
-```python
-for chunk in agent.stream("query"):
-    if chunk:  # Check if chunk is not empty
-        print(chunk, end="", flush=True)
-```
-
-### 3. Use `stream_observe()` for Production
-
-For production applications, use `stream_observe()` to track costs and performance:
-
-```python
-for update in agent.stream_observe("query"):
-    if update.is_token:
-        print(update.content, end="", flush=True)
-    elif update.is_agent_end:
-        log_metrics(update.tokens, update.cost, update.duration)
-```
-
-### 4. Display Progress Indicators
-
-Show users that something is happening:
-
-```python
-for update in agent.stream_observe("query"):
-    if update.is_agent_start:
-        print("🤖 Thinking... ", end="", flush=True)
-    elif update.is_token:
-        print(update.content, end="", flush=True)
-    elif update.is_agent_end:
-        print(f" ✓ Done ({update.duration:.1f}s)")
-```
-
-### 5. Collect Full Response
-
-Save the complete response for later use:
-
-```python
-response = ""
-for chunk in agent.stream("query"):
-    response += chunk
-    print(chunk, end="", flush=True)
-
-# Use complete response
-print(f"\n\nFull response length: {len(response)} chars")
-```
-
-## Common Use Cases
-
-### 1. Simple Chatbot
-
-```python
-agent = create_agent(
-    name="Chatbot",
-    description="Friendly chatbot",
-    persona="You are friendly and helpful",
-    model=groq("llama-3.3-70b-versatile")
-)
-
-while True:
-    user_input = input("You: ")
-    if user_input.lower() in ["exit", "quit"]:
-        break
-
-    print("Bot: ", end="", flush=True)
-    for chunk in agent.stream(user_input):
-        print(chunk, end="", flush=True)
-    print()
-```
-
-### 2. Web API with Streaming
-
-```python
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-
-app = FastAPI()
-
-@app.get("/chat")
-async def chat(query: str):
-    async def generate():
-        async for chunk in agent.astream(query):
-            yield chunk
-
-    return StreamingResponse(generate(), media_type="text/plain")
-```
-
-### 3. Terminal Progress
-
-```python
-import sys
-
-for update in agent.stream_observe("Explain quantum computing"):
-    if update.is_agent_start:
-        sys.stdout.write("Generating response")
-        sys.stdout.flush()
-    elif update.is_token:
-        sys.stdout.write(".")  # Progress dots
-        sys.stdout.flush()
-    elif update.is_agent_end:
-        print(f" Done! ({update.tokens} tokens)")
-```
-
-## When to Use Streaming
-
-**Use Streaming When:**
-- Building user-facing applications (chatbots, assistants)
-- Responses are longer than a few sentences
-- User experience is important
-- You want to reduce perceived latency
-
-**Skip Streaming When:**
-- Running batch processing jobs
-- Responses are very short (1-2 words)
-- Output goes to logs or files (no user waiting)
-- Building APIs that return complete responses
-
-## Comparison: `run()` vs `stream()`
-
-| Feature | `run()` | `stream()` |
-|---------|---------|------------|
-| **Return Type** | Complete string | Iterator of chunks |
-| **User Experience** | Wait for full response | See tokens as generated |
-| **Use Case** | Batch processing, short responses | User-facing apps, long responses |
-| **Latency** | Higher perceived latency | Lower perceived latency |
-| **Code Complexity** | Simpler | Slightly more complex |
-
-```python
-# run() - Wait for complete response
-result = agent.run("What is Python?")
-print(result)  # Entire response at once
-
-# stream() - See tokens as they arrive
-for chunk in agent.stream("What is Python?"):
-    print(chunk, end="", flush=True)  # Progressive output
-```
+1.  **Always Flush Output**: When printing to a terminal, use `flush=True` (e.g., `print(chunk, end="", flush=True)`) to ensure tokens appear immediately.
+2.  **Handle Empty Chunks**: Occasionally, a chunk might be empty. Your UI code should handle this gracefully.
 
 ## What's Next?
 
-**<u>[Stream Observe](/docs/Streaming/stream-observe)</u>**
-Learn about rich streaming updates with metadata like tokens, cost, and duration.
+**<u>[Rich Streaming (Observe)](/docs/Streaming/stream-observe)</u>**
+Learn how to get rich metadata like token counts, costs, and duration while streaming.
 
 **<u>[Async Streaming](/docs/Streaming/async-streaming)</u>**
-Use async streaming (`astream()`, `astream_observe()`) for concurrent agent execution and web servers.
-
-## Performance Notes
-
-Streaming adds minimal overhead (~1-5ms) compared to non-streaming execution. The LLM API latency (500-2000ms) dominates total response time.
-
-**Streaming does NOT:**
-- Make the LLM generate faster
-- Reduce total tokens or cost
-- Change the model's output
-
-**Streaming DOES:**
-- Improve user experience by showing progress
-- Reduce perceived latency
-- Make applications feel more responsive
+Run multiple agents concurrently or build high-performance web servers using async streaming.

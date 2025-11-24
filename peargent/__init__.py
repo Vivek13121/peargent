@@ -15,7 +15,8 @@ from .tools import get_tool_by_name
 from peargent.core.router import RouterResult, RoutingAgent
 from .core.stopping import limit_steps, StepLimitCondition
 from .core.pool import Pool
-from .core.history import (
+from .core.streaming import UpdateType, StreamUpdate
+from .history import (
     ConversationHistory,
     HistoryStore,
     FunctionalHistoryStore,
@@ -23,6 +24,8 @@ from .core.history import (
     FileHistoryStore,
     Thread,
     Message,
+)
+from .storage import (
     StorageType,
     InMemory,
     File,
@@ -34,12 +37,12 @@ from .config import HistoryConfig
 
 # Try to import SQL-based stores
 try:
-    from .core.history import PostgreSQLHistoryStore
+    from .history import PostgreSQLHistoryStore
 except ImportError:
     PostgreSQLHistoryStore = None
 
 try:
-    from .core.history import SQLiteHistoryStore
+    from .history import SQLiteHistoryStore
 except ImportError:
     SQLiteHistoryStore = None
 
@@ -56,6 +59,8 @@ __all__ = [
     'RoutingAgent',
     'RouterResult',
     'State',
+    'UpdateType',
+    'StreamUpdate',
     'InMemory',
     'File',
     'Sqlite',
@@ -156,7 +161,7 @@ def create_agent(name: str, description: str, persona: str, model=None, tools=No
     #    - If global tracer not configured -> disable tracing (default off)
     if tracing is _TRACING_NOT_SET:
         # Check if global tracer was explicitly configured
-        from peargent.telemetry.tracer import _global_tracer
+        from peargent.observability.tracer import _global_tracer
         if _global_tracer is not None and _global_tracer.enabled:
             # Global tracer was configured with enable_tracing() and is enabled
             actual_tracing = True
@@ -404,7 +409,7 @@ def create_history(store_type=None, **kwargs) -> ConversationHistory:
         elif isinstance(store_type, Redis):
             # Import Redis store dynamically
             try:
-                from .core.history import RedisHistoryStore
+                from .history import RedisHistoryStore
             except ImportError:
                 RedisHistoryStore = None
             

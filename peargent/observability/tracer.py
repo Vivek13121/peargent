@@ -639,7 +639,7 @@ def configure_tracing(
         traces = tracer.list_traces()
 
         # With file store
-        from peargent.telemetry import FileTracingStore
+        from peargent.observability import FileTracingStore
         store = FileTracingStore("./traces")
         tracer = configure_tracing(store=store)
     """
@@ -655,7 +655,7 @@ def configure_tracing(
 
 
 def enable_tracing(
-    store_type: str = "memory",
+    store_type: any = "memory",
     storage_dir: str = "./traces",
     connection_string: Optional[str] = None,
     traces_table: str = "traces",
@@ -672,7 +672,8 @@ def enable_tracing(
     configuration in a single call.
 
     Args:
-        store_type: Type of storage backend ("memory", "file", "postgres", "sqlite").
+        store_type: Storage backend - either a string ("memory", "file", "postgres", "sqlite")
+                   or a StorageType object (InMemory, File, Sqlite, Postgresql from peargent.history)
         storage_dir: Directory for file storage (only used if store_type="file").
         connection_string: Database connection string (required for "postgres" and "sqlite").
             - PostgreSQL: "postgresql://user:password@host:port/database"
@@ -695,39 +696,108 @@ def enable_tracing(
         # File-based tracing
         tracer = enable_tracing(store_type="file", storage_dir="./my_traces")
 
-        # PostgreSQL tracing
+        # Using storage type objects from peargent.storage
+        from peargent.storage import Postgresql, Sqlite, File, InMemory
+
+        # PostgreSQL with storage type
+        tracer = enable_tracing(
+            store_type=Postgresql(
+                connection_string="postgresql://user:pass@localhost/dbname",
+                table_prefix="peargent"
+            )
+        )
+
+        # SQLite with storage type
+        tracer = enable_tracing(
+            store_type=Sqlite(
+                connection_string="sqlite:///./traces.db",
+                table_prefix="peargent"
+            )
+        )
+
+        # File with storage type
+        tracer = enable_tracing(store_type=File(storage_dir="./my_traces"))
+
+        # In-memory with storage type
+        tracer = enable_tracing(store_type=InMemory())
+
+        # Legacy string-based API (still supported)
         tracer = enable_tracing(
             store_type="postgres",
             connection_string="postgresql://user:pass@localhost:5432/traces_db"
-        )
-
-        # SQLite tracing
-        tracer = enable_tracing(
-            store_type="sqlite",
-            connection_string="sqlite:///./traces.db"
-        )
-
-        # Custom table names
-        tracer = enable_tracing(
-            store_type="postgres",
-            connection_string="postgresql://user:pass@localhost:5432/mydb",
-            traces_table="my_traces",
-            spans_table="my_spans"
-        )
-
-        # Async database writes (non-blocking)
-        tracer = enable_tracing(
-            store_type="sqlite",
-            connection_string="sqlite:///./traces.db",
-            async_db=True,
-            num_workers=2
         )
 
         # Use the tracer
         traces = tracer.list_traces()
         tracer.print_traces(limit=5)
     """
-    if store_type == "memory":
+    # Import storage types
+    from peargent.storage import StorageType, InMemory as InMemoryType, File as FileType, Sqlite as SqliteType, Postgresql as PostgresqlType, Redis as RedisType
+
+    # Check if store_type is a StorageType object
+    if isinstance(store_type, StorageType):
+        if isinstance(store_type, InMemoryType):
+            store = InMemoryTracingStore()
+        elif isinstance(store_type, FileType):
+            from .store import FileTracingStore
+            store = FileTracingStore(store_type.storage_dir)
+        elif isinstance(store_type, SqliteType):
+            # Use custom table names if provided, otherwise use table_prefix
+            traces_table_name = traces_table if traces_table else f"{store_type.table_prefix}_traces"
+            spans_table_name = spans_table if spans_table else f"{store_type.table_prefix}_spans"
+
+            if getattr(store_type, 'async_db', False):
+                from .async_database_store import AsyncSQLiteTracingStore
+                store = AsyncSQLiteTracingStore(
+                    connection_string=store_type.connection_string,
+                    traces_table=traces_table_name,
+                    spans_table=spans_table_name,
+                    max_queue_size=getattr(store_type, 'max_queue_size', 1000),
+                    num_workers=getattr(store_type, 'num_workers', 2)
+                )
+            else:
+                from .database_store import SQLiteTracingStore
+                store = SQLiteTracingStore(
+                    connection_string=store_type.connection_string,
+                    traces_table=traces_table_name,
+                    spans_table=spans_table_name
+                )
+        elif isinstance(store_type, PostgresqlType):
+            # Use custom table names if provided, otherwise use table_prefix
+            traces_table_name = traces_table if traces_table else f"{store_type.table_prefix}_traces"
+            spans_table_name = spans_table if spans_table else f"{store_type.table_prefix}_spans"
+
+            if getattr(store_type, 'async_db', False):
+                from .async_database_store import AsyncPostgreSQLTracingStore
+                store = AsyncPostgreSQLTracingStore(
+                    connection_string=store_type.connection_string,
+                    traces_table=traces_table_name,
+                    spans_table=spans_table_name,
+                    max_queue_size=getattr(store_type, 'max_queue_size', 1000),
+                    num_workers=getattr(store_type, 'num_workers', 2)
+                )
+            else:
+                from .database_store import PostgreSQLTracingStore
+                store = PostgreSQLTracingStore(
+                    connection_string=store_type.connection_string,
+                    traces_table=traces_table_name,
+                    spans_table=spans_table_name
+                )
+        elif isinstance(store_type, RedisType):
+            # Redis storage
+            from .redis_store import RedisTracingStore
+            store = RedisTracingStore(
+                host=store_type.host,
+                port=store_type.port,
+                db=store_type.db,
+                password=store_type.password,
+                key_prefix=store_type.key_prefix
+            )
+        else:
+            raise ValueError(f"Unsupported storage type: {type(store_type)}")
+
+    # Legacy string-based API
+    elif store_type == "memory":
         store = InMemoryTracingStore()
     elif store_type == "file":
         from .store import FileTracingStore

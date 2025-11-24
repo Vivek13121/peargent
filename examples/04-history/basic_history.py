@@ -19,7 +19,6 @@ from peargent import (
     HistoryConfig,
 )
 from peargent.models import gemini, groq
-from peargent.models.openai import OpenAIModel
 
 def example_1_basic_history():
     """Example 1: Basic agent with persistent history."""

@@ -1,0 +1,11 @@
+{
+  "title": "Tracing and Observability",
+  "description": "Monitor and debug your agents",
+  "pages": [
+    "controlling-tracing",
+    "tracing-storage",
+    "session-context",
+    "accessing-traces",
+    "cost-tracking"
+  ]
+}

@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from peargent.core.history import ConversationHistory
+    from peargent.history import ConversationHistory
 
 class State:
     """

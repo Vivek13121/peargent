@@ -22,6 +22,10 @@
     "Structured Output",
     "Error Handling in Tools",
     "Tracing and Observability",
-    "Streaming"
+    "Streaming",
+    "---Practical Playbooks---",
+    "Practical Playbooks/effective-personas",
+    "Practical Playbooks/custom-tooling",
+    "Practical Playbooks/cost-optimization"
   ]
 }

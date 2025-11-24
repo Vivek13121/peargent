@@ -28,13 +28,13 @@ By defautl HistoryConfig uses `InMemory()` storage backend (temporary storage - 
 ```python
 from peargent import create_agent
 from peargent.history import HistoryConfig
-from peargent.models import groq
+from peargent.models import openai
 
 agent = create_agent(
     name="Assistant",
     description="Helpful assistant with memory",
     persona="You are a helpful assistant.",
-    model=groq("llama-3.3-70b-versatile"),
+    model=openai("gpt-4o"),
     history=HistoryConfig()
 )
 
@@ -50,7 +50,6 @@ agent.run("What's my name?")
 ```python
 from peargent import create_pool
 from peargent.history import HistoryConfig
-from peargent.models import groq
 
 pool = create_pool(
     agents=[agent1, agent2]
@@ -94,14 +93,8 @@ Because history supports many advanced capabilities, custom storage backends, ma
 History can be stored in different backends depending on your use case. Here are all supported backends available in Peargent:
 
 ```python
-from peargent.history import (
-    InMemory,
-    File,
-    Sqlite,
-    Postgresql,
-    Redis,
-    HistoryConfig
-)
+from peargent.history import HistoryConfig
+from peargent.storage import InMemory, File, Sqlite, Postgresql, Redis
 
 # InMemory (Default)
 # - Fast, temporary storage

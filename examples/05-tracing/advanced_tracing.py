@@ -5,15 +5,22 @@ This example demonstrates the new, simplified tracing API.
 """
 
 from peargent import create_agent
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing, get_cost_tracker
 from peargent.models import groq
+from peargent.storage import Sqlite
 
 # ============================================================================
 # OPTION 1: Simplest approach - one line setup with in-memory storage
 # ============================================================================
 
 # Enable tracing and get the tracer in one call
-tracer = enable_tracing()
+tracer = enable_tracing(
+    store_type=Sqlite(database_path="./traces.db",
+                      table_prefix="tracing_"),
+    traces_table="tracing_traces",
+    spans_table="tracing_spans",
+    enabled=True,
+)
 
 # Create agent with tracing enabled
 agent = create_agent(
@@ -23,6 +30,8 @@ agent = create_agent(
     model=groq("llama-3.3-70b-versatile"),
     tracing=True
 )
+
+tracer.get
 
 # Run agent - traces are automatically captured
 print("Running agent with query 1...")
@@ -43,6 +52,7 @@ print(f"Found {len(traces)} traces\n")
 
 # Print traces with nice formatting
 tracer.print_traces(limit=5, format="terminal")
+tracer.print_summary()
 
 # ============================================================================
 # OPTION 2: File-based storage (also simple!)
@@ -79,7 +89,7 @@ print(f"\nFound {len(file_traces)} traces in file storage")
 # OPTION 3: Advanced usage with configure_tracing (for custom stores)
 # ============================================================================
 
-from peargent.telemetry import configure_tracing, FileTracingStore
+from peargent.observability import configure_tracing, FileTracingStore
 
 # Create a custom store with specific settings
 custom_store = FileTracingStore(storage_dir="./custom_traces")

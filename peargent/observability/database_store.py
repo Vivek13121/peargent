@@ -15,7 +15,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
-from peargent.telemetry.trace import Trace, Span, SpanType
+from peargent.observability.trace import Trace, Span, SpanType
 
 
 def create_trace_model(base, table_name: str = "traces", spans_table_name: str = "spans"):

@@ -1,0 +1,10 @@
+{
+  "title": "Practical Playbooks",
+  "description": "Actionable guides and strategies for building real-world agents.",
+  "pages": [
+    "index",
+    "effective-personas",
+    "custom-tooling",
+    "cost-optimization"
+  ]
+}

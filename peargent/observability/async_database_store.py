@@ -10,8 +10,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 import atexit
 
-from peargent.telemetry.database_store import DatabaseTracingStore
-from peargent.telemetry.trace import Trace
+from peargent.observability.database_store import DatabaseTracingStore
+from peargent.observability.trace import Trace
 
 
 class AsyncDatabaseTracingStore(DatabaseTracingStore):

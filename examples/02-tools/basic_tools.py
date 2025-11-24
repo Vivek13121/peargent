@@ -6,7 +6,7 @@ Demonstrates how agents can call multiple tools simultaneously for faster execut
 
 import time
 from peargent import create_agent, create_tool
-from peargent.telemetry import enable_tracing
+from peargent.observability import enable_tracing
 from peargent.models import groq
 
 # Enable tracing

@@ -1,5 +1,5 @@
 ---
-title: Agent
+title: Agent Output
 description: Build agents that return reliable, schema-validated structured responses.
 ---
 
@@ -125,7 +125,7 @@ This allows your agent to return clean, hierarchical, and well-organized structu
 from pydantic import BaseModel, Field
 from typing import List
 from peargent import create_agent
-from peargent.models import groq
+from peargent.models import openai
 
 # ----- Nested Models ----- // [!code highlight:5]
 class Address(BaseModel):
@@ -147,7 +147,7 @@ agent = create_agent(
     name="ProfileBuilder",
     description="Builds structured user profiles",
     persona="You extract and organize user information accurately.",
-    model=groq("llama-3.3-70b-versatile"),
+    model=openai("gpt-4o"),
     output_schema=UserProfile
 )
 

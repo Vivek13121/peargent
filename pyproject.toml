@@ -20,7 +20,7 @@ keywords = [
     "anthropic",
     "groq",
     "tracing",
-    "telemetry",
+    "observability",
     "chatbot",
     "agentic",
     "automation"

@@ -18,7 +18,8 @@ Note: SQLite is perfect for:
 - No server setup required!
 """
 
-from peargent import create_agent, create_history, Sqlite, HistoryConfig
+from peargent import create_agent, create_history, HistoryConfig
+from peargent.storage import Sqlite
 from peargent.models import groq
 
 
@@ -32,8 +33,8 @@ def example_1_basic_sqlite():
     # Creates a local database file - no server needed!
     history = create_history(
         store_type=Sqlite(
-            database_path="./chat_app.db"  # Local file
-        )
+            database_path="./chat_app.db",  # Local file
+        ),
     )
 
     # Create a new conversation thread
