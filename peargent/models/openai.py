@@ -36,7 +36,7 @@ class OpenAIModel(BaseModel):
             "max_tokens": self.parameters.get("max_tokens", 512)
         }
         
-        response = requests.post(self.ENDPOINT_URL, headers=headers, json=body)
+        response = requests.post(self.endpoint_url, headers=headers, json=body)
         
         if response.status_code != 200:
             raise RuntimeError(f"OpenAI API error: {response.status_code}, {response.text}")
