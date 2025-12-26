@@ -7,9 +7,7 @@ from typing import Any, Dict
 
 import pytest
 
-from peargent import create_agent, create_pool, create_tool
-from peargent._core.router import RouterResult
-from peargent._core.state import State
+from peargent import create_agent, create_pool, create_tool, RouterResult, State
 
 
 class MockModel:
