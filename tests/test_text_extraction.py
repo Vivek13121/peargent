@@ -192,6 +192,9 @@ class TestToolIntegration:
         assert "HTML" in tool.description
         assert "PDF" in tool.description
         assert "file_path" in tool.input_parameters
+        # Optional parameters should not be in input_parameters
+        assert "extract_metadata" not in tool.input_parameters
+        assert "max_length" not in tool.input_parameters
     
     def test_tool_call_function(self):
         """Test calling tool function."""
@@ -203,9 +206,16 @@ class TestToolIntegration:
             temp_path = f.name
         
         try:
-            result = tool.call_function(temp_path)
+            # Test with just required parameter
+            result = tool.run({"file_path": temp_path})
             assert result["success"] is True
             assert "Test content" in result["text"]
+            
+            # Test with optional parameters
+            result = tool.run({"file_path": temp_path, "extract_metadata": True, "max_length": 50})
+            assert result["success"] is True
+            assert "Test content" in result["text"]
+            assert "metadata" in result
         finally:
             os.unlink(temp_path)
 

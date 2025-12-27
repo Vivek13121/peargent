@@ -5,10 +5,10 @@ Extracts plain text from HTML, PDF, and DOCX files with optional metadata.
 
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 import re
 
-from peargent._core.tool import Tool
+from peargent import Tool
 
 
 def extract_text(
@@ -126,7 +126,7 @@ def _extract_html(file_path: str, extract_metadata: bool) -> tuple[str, Dict[str
     # Read HTML content
     if file_path.startswith(("http://", "https://")):
         import urllib.request
-        with urllib.request.urlopen(file_path) as response:
+        with urllib.request.urlopen(file_path, timeout=30) as response:
             content = response.read().decode('utf-8', errors='ignore')
     else:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -286,7 +286,7 @@ class TextExtractionTool(Tool):
     Example:
         >>> from peargent.tools import TextExtractionTool
         >>> tool = TextExtractionTool()
-        >>> result = tool("document.pdf", extract_metadata=True)
+        >>> result = tool.run({"file_path": "document.pdf", "extract_metadata": True})
         >>> print(result["text"])
     """
     
@@ -296,12 +296,11 @@ class TextExtractionTool(Tool):
             description=(
                 "Extract plain text from HTML, PDF, DOCX, TXT, and Markdown files. "
                 "Can also extract from URLs. Optionally extracts metadata like title, "
-                "author, page count, etc."
+                "author, page count, etc. Optional parameters: extract_metadata (bool, default: False), "
+                "max_length (int, optional): maximum text length."
             ),
             input_parameters={
-                "file_path": str,
-                "extract_metadata": bool,
-                "max_length": int
+                "file_path": str
             },
             call_function=extract_text
         )
