@@ -43,15 +43,15 @@ def _validate_url(url: str) -> None:
         try:
             # Check if hostname is an IP address
             ip = ipaddress.ip_address(parsed.hostname)
-            
-            # Block private, loopback, link-local, and multicast addresses
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
-                raise ValueError(f"Access to private/internal IP addresses is not allowed: {ip}")
         except ValueError:
             # Not an IP address, it's a hostname - that's okay
             # We could add DNS resolution here, but it adds complexity
             # and might block legitimate internal hostnames
             pass
+        else:
+            # Block private, loopback, link-local, and multicast addresses
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+                raise ValueError(f"Access to private/internal IP addresses is not allowed: {ip}")
             
     except Exception as e:
         if isinstance(e, ValueError) and "not allowed" in str(e):
