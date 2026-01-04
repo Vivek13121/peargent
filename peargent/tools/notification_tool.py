@@ -104,8 +104,11 @@ def _send_smtp(
         msg['From'] = from_email
         msg['To'] = to_email
         
-        # Determine if body is HTML
-        if body.strip().startswith('<') and body.strip().endswith('>'):
+        # Determine if body is HTML by checking for HTML tags
+        html_tag_pattern = re.compile(r'<\s*(html|head|body|div|p|span|table|h[1-6]|ul|ol|li|a|img|br|hr)\b', re.IGNORECASE)
+        is_html = bool(html_tag_pattern.search(body))
+        
+        if is_html:
             part = MIMEText(body, 'html')
         else:
             part = MIMEText(body, 'plain')
@@ -181,8 +184,9 @@ def _send_resend(
         }
     
     try:
-        # Determine if body is HTML
-        is_html = body.strip().startswith('<') and body.strip().endswith('>')
+        # Determine if body is HTML by checking for HTML tags
+        html_tag_pattern = re.compile(r'<\s*(html|head|body|div|p|span|table|h[1-6]|ul|ol|li|a|img|br|hr)\b', re.IGNORECASE)
+        is_html = bool(html_tag_pattern.search(body))
         
         # Build payload
         payload = {
