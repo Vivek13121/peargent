@@ -1,5 +1,5 @@
 """
-Tests for Notification Tool
+Tests for Email Tool
 Tests SMTP and Resend providers, template substitution, and error handling.
 """
 
@@ -7,8 +7,8 @@ import pytest
 from unittest.mock import patch, Mock, MagicMock
 import smtplib
 
-from peargent.tools.notification_tool import (
-    NotificationTool,
+from peargent.tools.email_tool import (
+    EmailTool,
     send_notification,
     _validate_email,
     _apply_template
@@ -129,7 +129,7 @@ class TestTemplateSubstitution:
     def test_simple_fallback_syntax(self):
         """Test simple {variable} syntax works as fallback when Jinja2 unavailable."""
         # Test fallback by mocking Template as None
-        with patch('peargent.tools.notification_tool.Template', None):
+        with patch('peargent.tools.email_tool.Template', None):
             template = "Hello {name}! Your order #{order_id} is ready."
             variables = {"name": "Alice", "order_id": "12345"}
             
@@ -151,7 +151,7 @@ class TestTemplateSubstitution:
     def test_fallback_without_jinja2(self):
         """Test that simple {variable} replacement works when Jinja2 unavailable."""
         # Mock Template as None to simulate Jinja2 not being installed
-        with patch('peargent.tools.notification_tool.Template', None):
+        with patch('peargent.tools.email_tool.Template', None):
             template = "Hello {name}! Order: {order_id}"
             variables = {"name": "Bob", "order_id": "999"}
             
@@ -167,7 +167,7 @@ class TestTemplateSubstitution:
     'SMTP_USERNAME': 'test@example.com',
     'SMTP_PASSWORD': 'password123'
 })
-@patch('peargent.tools.notification_tool.smtplib.SMTP')
+@patch('peargent.tools.email_tool.smtplib.SMTP')
 class TestSMTPProvider:
     """Test SMTP email sending functionality."""
     
@@ -285,7 +285,7 @@ class TestSMTPProvider:
         assert "{{ name }}" in str(sent_message) or "Hello {{ name }}" in sent_message.get("Subject", "")
 
 @patch.dict('os.environ', {'RESEND_API_KEY': 'test-api-key'})
-@patch('peargent.tools.notification_tool.requests')
+@patch('peargent.tools.email_tool.requests')
 class TestResendProvider:
     """Test Resend API email sending functionality."""
     
@@ -465,11 +465,11 @@ class TestValidation:
 
 
 class TestNotificationToolClass:
-    """Test NotificationTool class."""
+    """Test EmailTool class."""
     
     def test_tool_initialization(self):
-        """Test that NotificationTool initializes correctly."""
-        tool = NotificationTool()
+        """Test that EmailTool initializes correctly."""
+        tool = EmailTool()
         
         assert tool.name == "send_notification"
         assert "email" in tool.description.lower()
@@ -488,13 +488,13 @@ class TestNotificationToolClass:
         'SMTP_USERNAME': 'test@test.com',
         'SMTP_PASSWORD': 'pass123'
     })
-    @patch('peargent.tools.notification_tool.smtplib.SMTP')
+    @patch('peargent.tools.email_tool.smtplib.SMTP')
     def test_tool_run_method(self, mock_smtp):
-        """Test NotificationTool run method."""
+        """Test EmailTool run method."""
         mock_server = MagicMock()
         mock_smtp.return_value = mock_server
         
-        tool = NotificationTool()
+        tool = EmailTool()
         result = tool.run({
             "to_email": "user@example.com",
             "subject": "Test",
@@ -515,7 +515,7 @@ class TestNotificationToolClass:
 class TestIntegration:
     """Integration tests combining multiple features."""
     
-    @patch('peargent.tools.notification_tool.smtplib.SMTP')
+    @patch('peargent.tools.email_tool.smtplib.SMTP')
     def test_full_template_workflow(self, mock_smtp):
         """Test complete workflow with templates."""
         mock_server = MagicMock()

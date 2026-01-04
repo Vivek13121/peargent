@@ -1,5 +1,5 @@
 """
-Advanced Notification Tool Example
+Advanced Email Tool Example
 
 Demonstrates advanced features:
 - Multiple providers (SMTP, Resend)
@@ -10,7 +10,7 @@ Demonstrates advanced features:
 
 import os
 from peargent import create_agent
-from peargent.tools import notification_tool
+from peargent.tools import email_tool
 from peargent.models import gemini
 
 
@@ -29,7 +29,7 @@ def example_smtp_configuration():
     print("SMTP_USERNAME=your-email@gmail.com")
     print("SMTP_PASSWORD=your-app-password  # Use App Password, not regular password")
     print()
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "recipient@example.com",
         "subject": "Test from Gmail SMTP",
         "body": "This email was sent via Gmail SMTP.",
@@ -76,7 +76,7 @@ def example_template_systems():
         "support_email": "support@example.com"
     }
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": user_data["email"],
         "subject": "Welcome to {{ company }}, {{ first_name }}!",
         "body": """
@@ -129,7 +129,7 @@ def example_template_systems():
         "dashboard_url": "https://monitoring.example.com/servers/web-01"
     }
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "devops@example.com",
         "subject": " Alert: {{ alert_type }} on {{ server_name }}",
         "body": """
@@ -171,7 +171,7 @@ This is an automated alert from the monitoring system.
         "invoice_url": "https://billing.example.com/invoices/001"
     }
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "john@example.com",
         "subject": "Invoice {{ invoice_number }} - Payment Received",
         "body": """
@@ -234,7 +234,7 @@ def example_resend_provider():
     print("\n1. Basic Resend Email:")
     print("-" * 60)
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "user@example.com",
         "subject": "Hello from Resend API",
         "body": "This is a test email sent via Resend.",
@@ -251,7 +251,7 @@ def example_resend_provider():
     print("\n2. Resend with HTML Template:")
     print("-" * 60)
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "customer@example.com",
         "subject": "Your order has shipped!",
         "body": """
@@ -307,7 +307,7 @@ You are a smart notification assistant. When asked to send notifications:
 Always use the send_notification tool to send emails.
             """,
             model=gemini("gemini-2.5-flash-lite"),
-            tools=[notification_tool]
+            tools=[email_tool]
         )
         
         print("\nScenario 1: Password Reset Request")

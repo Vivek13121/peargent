@@ -460,7 +460,7 @@ def send_notification(
         )
 
 
-class NotificationTool(Tool):
+class EmailTool(Tool):
     """
     Tool for sending email notifications with template support.
     
@@ -480,8 +480,8 @@ class NotificationTool(Tool):
     For Resend, set RESEND_API_KEY in environment.
     
     Example:
-        >>> from peargent.tools import NotificationTool
-        >>> tool = NotificationTool()
+        >>> from peargent.tools import EmailTool
+        >>> tool = EmailTool()
         >>> result = tool.run({
         ...     "to_email": "user@example.com",
         ...     "subject": "Hello {{ name }}",
@@ -517,4 +517,4 @@ class NotificationTool(Tool):
 
 
 # Create default instance for easy import
-notification_tool = NotificationTool()
+email_tool = EmailTool()

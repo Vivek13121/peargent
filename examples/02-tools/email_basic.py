@@ -1,18 +1,18 @@
 """
-Basic Notification Tool Example
+Basic Email Tool Example
 
-Demonstrates how to send email notifications using the NotificationTool.
+Demonstrates how to send email notifications using the EmailTool.
 Shows both SMTP and Resend providers.
 """
 
 from peargent import create_agent
-from peargent.tools import notification_tool
+from peargent.tools import email_tool
 from peargent.models import gemini
 
 
 def main():
     print("=" * 60)
-    print("Notification Tool - Basic Example")
+    print("Email Tool - Basic Example")
     print("=" * 60)
     
     # Example 1: Send basic email via SMTP
@@ -25,10 +25,10 @@ def main():
     # SMTP_USERNAME=your-email@gmail.com
     # SMTP_PASSWORD=your-app-password
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "recipient@example.com",
         "subject": "Test Email from Peargent",
-        "body": "This is a test email sent using the Notification Tool.",
+        "body": "This is a test email sent using the Email Tool.",
         "from_email": "sender@example.com"
     })
     
@@ -44,7 +44,7 @@ def main():
     print("\n\n2. Sending email with Jinja2 template variables:")
     print("-" * 60)
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "user@example.com",
         "subject": "Welcome {{ user_name }}!",
         "body": """
@@ -78,7 +78,7 @@ The Team
     print("-" * 60)
     
     # When template_vars is not provided, the email is sent as-is
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "dev@example.com",
         "subject": "System Report for {{ date }}",  # Sent literally
         "body": "Current status: {{ status }}",  # Sent literally
@@ -110,7 +110,7 @@ The Team
     </html>
     """
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "admin@example.com",
         "subject": "Task Completed Successfully",
         "body": html_body,
@@ -128,7 +128,7 @@ The Team
     
     # Note: RESEND_API_KEY must be set in .env file
     
-    result = notification_tool.run({
+    result = email_tool.run({
         "to_email": "recipient@example.com",
         "subject": "Hello from Resend",
         "body": "This email was sent using the Resend API!",
@@ -150,7 +150,7 @@ The Team
     
     try:
         agent = create_agent(
-            name="NotificationAgent",
+            name="EmailAgent",
             description="An agent that can send email notifications",
             persona=(
                 "You are a helpful assistant that can send email notifications. "
@@ -158,7 +158,7 @@ The Team
                 "Always use appropriate subject lines and clear, professional message bodies."
             ),
             model=gemini("gemini-2.5-flash-lite"),
-            tools=[notification_tool]
+            tools=[email_tool]
         )
         
         response = agent.run(
