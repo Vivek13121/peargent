@@ -46,7 +46,7 @@ For more examples and detailed documentation, visit [Docs](https://peargent.onli
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started. Also join [Discord](https://discord.gg/jtNvmjMAYu)
 
 ## License
 
