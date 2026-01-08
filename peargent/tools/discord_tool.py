@@ -66,6 +66,29 @@ def _apply_template(template: str, variables: Dict[str, Any]) -> str:
     return result
 
 
+def _apply_template_recursive(data: Any, variables: Dict[str, Any]) -> Any:
+    """
+    Recursively apply template variables to nested structures.
+    
+    Handles strings, dicts, lists, and other types.
+    
+    Args:
+        data: Data structure to process (string, dict, list, etc.)
+        variables: Dictionary of template variables
+        
+    Returns:
+        Processed data with templates rendered
+    """
+    if isinstance(data, str):
+        return _apply_template(data, variables)
+    elif isinstance(data, dict):
+        return {key: _apply_template_recursive(value, variables) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [_apply_template_recursive(item, variables) for item in data]
+    else:
+        return data
+
+
 def _send_webhook_message(
     webhook_url: str,
     content: Optional[str] = None,
@@ -255,8 +278,11 @@ def send_discord_message(
         }
     
     # Apply template variables if provided
-    if template_vars and content:
-        content = _apply_template(content, template_vars)
+    if template_vars:
+        if content:
+            content = _apply_template(content, template_vars)
+        if embed:
+            embed = _apply_template_recursive(embed, template_vars)
     
     # Send message
     return _send_webhook_message(

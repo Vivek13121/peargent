@@ -12,7 +12,7 @@ Demonstrates advanced features:
 from peargent import create_agent
 from peargent.tools import discord_tool
 from peargent.models import gemini
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def main():
@@ -133,7 +133,7 @@ def process_data(data):
                 {"name": "Recommendation", "value": "Scale up resources or investigate processes", "inline": False}
             ],
             "footer": {"text": "Monitoring System"},
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     })
     
@@ -174,14 +174,16 @@ def process_data(data):
     print("-" * 60)
     
     agent = create_agent(
-        system_prompt="""You are a DevOps notification assistant. 
+        name="DevOpsNotifier",
+        description="A DevOps notification assistant",
+        persona="""You are a DevOps notification assistant. 
 When asked to send notifications, create well-formatted Discord messages with:
 - Appropriate colors based on severity (green=success, yellow=warning, red=error)
 - Clear, structured information in embed fields
 - Professional formatting
-Use the send_discord_message tool.""",
-        tools=[discord_tool],
-        model=gemini
+Use the discord_webhook tool.""",
+        model=gemini("gemini-2.5-flash-lite"),
+        tools=[discord_tool]
     )
     
     # Agent creates a formatted notification
@@ -219,11 +221,14 @@ Use the send_discord_message tool.""",
     print("-" * 60)
     
     result = discord_tool.run({
-        "embed_title": "Daily Report",
-        "embed_description": """**Completed Tasks:**
+        "content": "Daily Report Summary",
+        "embed": {
+            "title": "Daily Report",
+            "description": """**Completed Tasks:**
 {% for task in tasks %}- {{ task.name }}: {{ task.status }}
 {% endfor %}""",
-        "embed_color": 0x5865F2,
+            "color": 0x5865F2
+        },
         "template_vars": {
             "tasks": [
                 {"name": "Data backup", "status": "✅ Success"},

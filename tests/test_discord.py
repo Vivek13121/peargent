@@ -5,7 +5,7 @@ Tests webhook messaging, embeds, template substitution, and error handling.
 
 import pytest
 from unittest.mock import patch, Mock
-from datetime import datetime
+from datetime import datetime, timezone
 
 from peargent.tools.discord_tool import (
     DiscordTool,
@@ -239,7 +239,7 @@ class TestDiscordMessaging:
         mock_response.status_code = 204
         mock_requests.post.return_value = mock_response
         
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         
         result = send_discord_message(
             content="Notification:",

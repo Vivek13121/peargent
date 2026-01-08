@@ -132,10 +132,12 @@ def main():
     
     # Create agent with Discord tool
     agent = create_agent(
-        system_prompt="""You are a helpful assistant that can send messages to Discord.
-When asked to notify someone on Discord, use the send_discord_message tool.""",
-        tools=[discord_tool],
-        model=gemini
+        name="DiscordAssistant",
+        description="A helpful assistant that can send Discord messages",
+        persona="""You are a helpful assistant that can send messages to Discord.
+When asked to notify someone on Discord, use the discord_webhook tool.""",
+        model=gemini("gemini-2.5-flash-lite"),
+        tools=[discord_tool]
     )
     
     # Agent will use the tool to send a message
