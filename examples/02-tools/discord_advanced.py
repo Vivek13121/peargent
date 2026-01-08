@@ -48,7 +48,7 @@ def main():
                 "text": "GitHub Notifications",
                 "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
             },
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     })
     
