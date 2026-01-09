@@ -4,17 +4,20 @@ from .math_tool import MathTool
 from .text_extraction_tool import TextExtractionTool
 from .wikipedia_tool import WikipediaKnowledgeTool
 from .email_tool import EmailTool
+from .discord_tool import DiscordTool
 
 calculator = MathTool()
 text_extractor = TextExtractionTool()
 wikipedia_tool = WikipediaKnowledgeTool()
 email_tool = EmailTool()
+discord_tool = DiscordTool()
 
 BUILTIN_TOOLS = {
     "calculator": calculator,
     "extract_text": text_extractor,
     "search_wikipedia": wikipedia_tool,
     "send_notification": email_tool,
+    "send_discord_message": discord_tool,
 }
 
 def get_tool_by_name(name: str):
