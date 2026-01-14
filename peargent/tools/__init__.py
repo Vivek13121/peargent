@@ -5,12 +5,14 @@ from .text_extraction_tool import TextExtractionTool
 from .wikipedia_tool import WikipediaKnowledgeTool
 from .email_tool import EmailTool
 from .discord_tool import DiscordTool
+from .datetime_tool import DateTimeTool
 
 calculator = MathTool()
 text_extractor = TextExtractionTool()
 wikipedia_tool = WikipediaKnowledgeTool()
 email_tool = EmailTool()
 discord_tool = DiscordTool()
+datetime_tool = DateTimeTool()
 
 BUILTIN_TOOLS = {
     "calculator": calculator,
@@ -18,6 +20,7 @@ BUILTIN_TOOLS = {
     "search_wikipedia": wikipedia_tool,
     "send_notification": email_tool,
     "send_discord_message": discord_tool,
+    "datetime_operations": datetime_tool,
 }
 
 def get_tool_by_name(name: str):
