@@ -9,6 +9,12 @@ from urllib.parse import quote
 from peargent import Tool
 
 try:
+    from ddgs import DDGS
+    DDGS_AVAILABLE = True
+except ImportError:
+    DDGS_AVAILABLE = False
+
+try:
     import requests
 except ImportError:
     requests = None
@@ -52,14 +58,14 @@ def web_search(
         ...     print(f"{r['title']}: {r['url']}")
         ...     print(r['snippet'])
     """
-    if requests is None:
+    if not DDGS_AVAILABLE:
         return {
             "results": [],
             "metadata": {},
             "success": False,
             "error": (
-                "requests library is required for web search. "
-                "Install it with: pip install requests"
+                "ddgs library is required for web search. "
+                "Install it with: pip install ddgs"
             )
         }
     
@@ -84,8 +90,8 @@ def web_search(
         time_range = None
     
     try:
-        # Use DuckDuckGo HTML search
-        results = _search_duckduckgo(query, max_results, region, safesearch, time_range)
+        # Use DuckDuckGo search via DDGS library
+        results = _search_duckduckgo_api(query, max_results, region, safesearch, time_range)
         
         if not results:
             return {
@@ -137,7 +143,7 @@ def web_search(
         }
 
 
-def _search_duckduckgo(
+def _search_duckduckgo_api(
     query: str,
     max_results: int,
     region: str,
@@ -145,46 +151,51 @@ def _search_duckduckgo(
     time_range: Optional[str]
 ) -> List[Dict[str, str]]:
     """
-    Perform search using DuckDuckGo HTML interface.
+    Perform search using DuckDuckGo API via duckduckgo-search library.
     
     Returns:
         List of dicts with 'title', 'snippet', 'url' keys
     """
-    # DuckDuckGo HTML search endpoint
-    base_url = "https://html.duckduckgo.com/html/"
-    
-    # Map safesearch to DuckDuckGo parameter
+    # Map safesearch to DDGS parameter
     safesearch_map = {
-        "strict": "1",
-        "moderate": "-1",
-        "off": "-2"
+        "strict": "strict",
+        "moderate": "moderate",
+        "off": "off"
     }
     
-    # Build search parameters
-    params = {
-        "q": query,
-        "kl": region
-    }
-    
-    # Add safesearch
-    if safesearch in safesearch_map:
-        params["kp"] = safesearch_map[safesearch]
-    
-    # Add time range
-    if time_range:
-        params["df"] = time_range
-    
-    headers = {
-        "User-Agent": "Peargent/0.1 (https://github.com/Peargent/peargent) Python/requests"
+    # Map time_range to DDGS parameter
+    timelimit_map = {
+        "d": "d",  # day
+        "w": "w",  # week
+        "m": "m",  # month
+        "y": "y"   # year
     }
     
     try:
-        # Send POST request (DuckDuckGo HTML uses POST)
-        response = requests.post(base_url, data=params, headers=headers, timeout=15)
-        response.raise_for_status()
+        ddgs = DDGS()
         
-        # Parse HTML response
-        results = _parse_duckduckgo_html(response.text, max_results)
+        # Prepare search parameters
+        search_kwargs = {
+            "max_results": max_results,
+            "region": region,
+            "safesearch": safesearch_map.get(safesearch, "moderate")
+        }
+        
+        # Add time limit if specified
+        if time_range and time_range in timelimit_map:
+            search_kwargs["timelimit"] = timelimit_map[time_range]
+        
+        # Perform search
+        search_results = ddgs.text(query, **search_kwargs)
+        
+        # Convert to our format
+        results = []
+        for r in search_results:
+            results.append({
+                "title": r.get("title", ""),
+                "snippet": r.get("body", ""),
+                "url": r.get("href", "")
+            })
         
         return results
         
